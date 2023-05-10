@@ -80,7 +80,7 @@ class DateClasses {
     }
 }
 
-export class GraphModel extends Model {
+export class GanttModel extends Model {
     /**
      * @override
      */

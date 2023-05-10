@@ -11,7 +11,7 @@ import { useSetupView } from "@web/views/view_hook";
 
 import { Component, useRef } from "@odoo/owl";
 
-export class GraphController extends Component {
+export class GanttController extends Component {
     setup() {
         this.actionService = useService("action");
         this.model = useModel(this.props.Model, this.props.modelParams);
@@ -127,10 +127,10 @@ export class GraphController extends Component {
     }
 }
 
-GraphController.template = "web.GraphView";
-GraphController.components = { Dropdown, DropdownItem, GroupByMenu, Layout };
+GanttController.template = "project_gantt.GanttView";
+GanttController.components = { Dropdown, DropdownItem, GroupByMenu, Layout };
 
-GraphController.props = {
+GanttController.props = {
     ...standardViewProps,
     Model: Function,
     modelParams: Object,

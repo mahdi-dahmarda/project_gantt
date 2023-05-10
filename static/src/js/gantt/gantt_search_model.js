@@ -2,7 +2,7 @@
 
 import { SearchModel } from "@web/search/search_model";
 
-export class GraphSearchModel extends SearchModel {
+export class GanttSearchModel extends SearchModel {
     _getIrFilterDescription() {
         this.preparingIrFilterDescription = true;
         const result = super._getIrFilterDescription(...arguments);

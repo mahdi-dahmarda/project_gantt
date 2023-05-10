@@ -4,10 +4,15 @@
     "depends": ['project'],
     "data": [
         # "security/ir.model.access.csv",
-        # "views/estate_property_offer_views.xml",
+        "views/views.xml",
         # "data/master_data.xml",
     ],
     "demo": [],
+    'assets': {
+        'web.assets_backend': [
+            '/project_gantt/static/src/js/**/*',
+        ],
+    },
     "application": True,
     "license": "GPL-3",
 }

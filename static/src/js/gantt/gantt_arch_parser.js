@@ -7,7 +7,7 @@ import { archParseBoolean } from "@web/views/utils";
 const MODES = ["bar", "line", "pie"];
 const ORDERS = ["ASC", "DESC", "asc", "desc", null];
 
-export class GraphArchParser extends XMLParser {
+export class GanttArchParser extends XMLParser {
     parse(arch, fields = {}) {
         const archInfo = { fields, fieldAttrs: {}, groupBy: [] };
         this.visitXML(arch, (node) => {

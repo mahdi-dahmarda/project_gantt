@@ -2,26 +2,24 @@
 
 import { _lt } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
-import { GraphArchParser } from "./graph_arch_parser";
-import { GraphModel } from "./graph_model";
-import { GraphController } from "./graph_controller";
-import { GraphRenderer } from "./graph_renderer";
-import { GraphSearchModel } from "./graph_search_model";
+import { GanttArchParser } from "./gantt_arch_parser";
+import { GanttModel } from "./gantt_model";
+import { GanttController } from "./gantt_controller";
+import { GanttRenderer } from "./gantt_renderer";
+import { GanttSearchModel } from "./gantt_search_model";
 
-const viewRegistry = registry.category("views");
-
-export const graphView = {
-    type: "graph",
-    display_name: _lt("Graph"),
-    icon: "fa fa-area-chart",
+export const ganttView = {
+    type: "gantt",
+    display_name: _lt("Gantt"),
+    icon: "fa fa-tasks",
     multiRecord: true,
-    Controller: GraphController,
-    Renderer: GraphRenderer,
-    Model: GraphModel,
-    ArchParser: GraphArchParser,
-    SearchModel: GraphSearchModel,
+    Controller: GanttController,
+    Renderer: GanttRenderer,
+    Model: GanttModel,
+    ArchParser: GanttArchParser,
+    SearchModel: GanttSearchModel,
     searchMenuTypes: ["filter", "groupBy", "comparison", "favorite"],
-    buttonTemplate: "web.GraphView.Buttons",
+    buttonTemplate: "project_gantt.GanttView.Buttons",
 
     props: (genericProps, view) => {
         let modelParams;
@@ -56,4 +54,4 @@ export const graphView = {
     },
 };
 
-viewRegistry.add("graph", graphView);
+registry.category("views").add("gantt", ganttView);

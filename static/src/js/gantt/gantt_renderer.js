@@ -3,7 +3,7 @@
 import { _lt } from "@web/core/l10n/translation";
 import { getBorderWhite, DEFAULT_BG, getColor, hexToRGBA } from "./colors";
 import { formatFloat } from "@web/views/fields/formatters";
-import { SEP } from "./graph_model";
+import { SEP } from "./gantt_model";
 import { sortBy } from "@web/core/utils/arrays";
 import { loadJS } from "@web/core/assets";
 import { renderToString } from "@web/core/utils/render";
@@ -41,7 +41,7 @@ function shortenLabel(label) {
     return shortLabel;
 }
 
-export class GraphRenderer extends Component {
+export class GanttRenderer extends Component {
     setup() {
         this.model = this.props.model;
 
@@ -114,7 +114,7 @@ export class GraphRenderer extends Component {
         }
         const chartAreaTop = this.chart.chartArea.top;
         const viewContentTop = this.rootRef.el.getBoundingClientRect().top;
-        const innerHTML = renderToString("web.GraphRenderer.CustomTooltip", {
+        const innerHTML = renderToString("project_gantt.GanttRenderer.CustomTooltip", {
             maxWidth: getMaxWidth(this.chart.chartArea),
             measure: measures[measure].string,
             mode: this.model.metaData.mode,
@@ -652,5 +652,5 @@ export class GraphRenderer extends Component {
     }
 }
 
-GraphRenderer.template = "web.GraphRenderer";
-GraphRenderer.props = ["class?", "model", "onGraphClicked"];
+GanttRenderer.template = "project_gantt.GanttRenderer";
+GanttRenderer.props = ["class?", "model", "onGraphClicked"];
