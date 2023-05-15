@@ -10,7 +10,9 @@
     "demo": [],
     'assets': {
         'web.assets_backend': [
-            '/project_gantt/static/src/js/**/*',
+            '/project_gantt/static/lib/dhtmlxgantt/dhtmlxgantt.css',
+            '/project_gantt/static/lib/dhtmlxgantt/dhtmlxgantt.js',
+            '/project_gantt/static/src/js/**/*'
         ],
     },
     "application": True,

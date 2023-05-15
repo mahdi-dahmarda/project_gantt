@@ -27,10 +27,19 @@
         </div>
     </t>
 
+    <!-- <t t-name="project_gantt.GanttRenderer" owl="1">
+        <div t-att-class="'o_graph_renderer o_renderer h-100 ' + props.class" t-ref="root">
+            <div class="o_graph_canvas_container h-100 position-relative" t-ref="container">
+                <canvas t-ref="canvas" />
+            </div>
+        </div>
+    </t> -->
+
     <t t-name="project_gantt.GanttRenderer" owl="1">
         <div t-att-class="'o_graph_renderer o_renderer h-100 ' + props.class" t-ref="root">
             <div class="o_graph_canvas_container h-100 position-relative" t-ref="container">
                 <canvas t-ref="canvas" />
+                <div id="gantt_here" style='width:100%; height:100vh;'></div>
             </div>
         </div>
     </t>
