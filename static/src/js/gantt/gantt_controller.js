@@ -54,42 +54,45 @@ export class GanttController extends Component {
      * @param {Object} context
      */
     openView(domain, views, context) {
+        console.log(this.model.metaData)
         this.actionService.doAction(
             {
                 context,
                 domain,
                 name: this.model.metaData.title,
                 res_model: this.model.metaData.resModel,
-                target: "current",
+                target: "new",
                 type: "ir.actions.act_window",
                 views,
             },
             {
-                viewType: "list",
+                viewType: "form",
             }
         );
     }
     /**
-     * @param {string} domain the domain of the clicked area
+     * @param {number} domain the domain of the clicked area
      */
-    onGraphClicked(domain) {
+    onGraphClicked(id) {
         const { context } = this.model.metaData;
 
-        Object.keys(context).forEach((x) => {
-            if (x === "group_by" || x.startsWith("search_default_")) {
-                delete context[x];
+        this.actionService.doAction(
+            {
+                name: this.model.metaData.title,
+                res_model: this.model.metaData.resModel,
+                res_id: id,
+                target: "new",
+                type: "ir.actions.act_window",
+                views: [[false, 'form']],
+                viewType: "form",
+                context: {}
+            },
+            {
+                onClose: () => {
+                    this.model.updateMetaData(this.model.metaData)
+                },
             }
-        });
-
-        const views = {};
-        for (const [viewId, viewType] of this.env.config.views || []) {
-            views[viewType] = viewId;
-        }
-        function getView(viewType) {
-            return [views[viewType] || false, viewType];
-        }
-        const actionViews = [getView("list"), getView("form")];
-        this.openView(domain, actionViews, context);
+        );
     }
 
     /**

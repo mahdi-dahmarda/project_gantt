@@ -2,6 +2,7 @@
 {
     "name": "Project Gantt View",
     "depends": ['project'],
+    "sequence": -200,
     "data": [
         # "security/ir.model.access.csv",
         "views/views.xml",

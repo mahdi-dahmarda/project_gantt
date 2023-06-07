@@ -88,9 +88,9 @@ export class GanttModel extends Model {
         // concurrency management
         this.keepLast = new KeepLast();
         this.race = new Race();
-        const _fetchDataPoints = this._fetchDataPoints.bind(this);
-        this._fetchDataPoints = (...args) => {
-            return this.race.add(_fetchDataPoints(...args));
+        const _fetchData = this._fetchData.bind(this);
+        this._fetchData = (...args) => {
+            return this.race.add(_fetchData(...args));
         };
 
         this.initialGroupBy = null;
@@ -113,7 +113,7 @@ export class GanttModel extends Model {
             this.initialGroupBy = searchParams.context.graph_groupbys || this.metaData.groupBy; // = arch groupBy --> change that
         }
         const metaData = this._buildMetaData();
-        return this._fetchDataPoints(metaData);
+        return this._fetchData(metaData);
     }
 
     /**
@@ -131,7 +131,7 @@ export class GanttModel extends Model {
     async updateMetaData(params) {
         if ("measure" in params) {
             const metaData = this._buildMetaData(params);
-            await this._fetchDataPoints(metaData);
+            await this._fetchData(metaData);
             this.useSampleModel = false;
         } else {
             await this.race.getCurrentProm();
@@ -186,101 +186,10 @@ export class GanttModel extends Model {
      * @protected
      * @param {Object} metaData
      */
-    async _fetchDataPoints(metaData) {
-        this.dataPoints = await this.keepLast.add(this._loadDataPoints(metaData));
+    async _fetchData(metaData) {
+        this.data = await this.keepLast.add(this._loadData(metaData));
         this.metaData = metaData;
         this._prepareData();
-    }
-
-    /**
-     * Separates dataPoints coming from the read_group(s) into different
-     * datasets. This function returns the parameters data and labels used
-     * to produce the charts.
-     * @protected
-     * @param {Object[]}
-     * @returns {Object}
-     */
-    _getData(dataPoints) {
-        const { comparisonField, groupBy, mode } = this.metaData;
-
-        let identify = false;
-        if (comparisonField && groupBy.length && groupBy[0].fieldName === comparisonField) {
-            identify = true;
-        }
-        const dateClasses = identify ? this._getDateClasses(dataPoints) : null;
-
-        // dataPoints --> labels
-        let labels = [];
-        const labelMap = {};
-        for (const dataPt of dataPoints) {
-            const x = dataPt.labels.slice(0, mode === "pie" ? undefined : 1);
-            const trueLabel = x.length ? x.join(SEP) : this.env._t("Total");
-            if (dateClasses) {
-                x[0] = dateClasses.classLabel(dataPt.originIndex, x[0]);
-            }
-            const key = JSON.stringify(x);
-            if (labelMap[key] === undefined) {
-                labelMap[key] = labels.length;
-                if (dateClasses) {
-                    if (mode === "pie") {
-                        x[0] = dateClasses.classMembers(x[0]).join(", ");
-                    } else {
-                        x[0] = dateClasses.representative(x[0]);
-                    }
-                }
-                const label = x.length ? x.join(SEP) : this.env._t("Total");
-                labels.push(label);
-            }
-            dataPt.labelIndex = labelMap[key];
-            dataPt.trueLabel = trueLabel;
-        }
-
-        // dataPoints + labels --> datasetsTmp --> datasets
-        const datasetsTmp = {};
-        for (const dataPt of dataPoints) {
-            const { domain, labelIndex, originIndex, trueLabel, value } = dataPt;
-            const datasetLabel = this._getDatasetLabel(dataPt);
-            if (!(datasetLabel in datasetsTmp)) {
-                let dataLength = labels.length;
-                if (mode !== "pie" && dateClasses) {
-                    dataLength = dateClasses.arrayLength(originIndex);
-                }
-                datasetsTmp[datasetLabel] = {
-                    data: new Array(dataLength).fill(0),
-                    trueLabels: labels.slice(0, dataLength), // should be good // check this in case identify = true
-                    domains: new Array(dataLength).fill([]),
-                    label: datasetLabel,
-                    originIndex: originIndex,
-                };
-            }
-            datasetsTmp[datasetLabel].data[labelIndex] = value;
-            datasetsTmp[datasetLabel].domains[labelIndex] = domain;
-            datasetsTmp[datasetLabel].trueLabels[labelIndex] = trueLabel;
-        }
-        // sort by origin
-        let datasets = sortBy(Object.values(datasetsTmp), "originIndex");
-
-        if (mode === "pie") {
-            // We kinda have a matrix. We remove the zero columns and rows. This is a global operation.
-            // That's why it cannot be done before.
-            datasets = datasets.filter((dataset) => dataset.data.some((v) => Boolean(v)));
-            const labelsToKeepIndexes = {};
-            labels.forEach((_, index) => {
-                if (datasets.some((dataset) => Boolean(dataset.data[index]))) {
-                    labelsToKeepIndexes[index] = true;
-                }
-            });
-            labels = labels.filter((_, index) => labelsToKeepIndexes[index]);
-            for (const dataset of datasets) {
-                dataset.data = dataset.data.filter((_, index) => labelsToKeepIndexes[index]);
-                dataset.domains = dataset.domains.filter((_, index) => labelsToKeepIndexes[index]);
-                dataset.trueLabels = dataset.trueLabels.filter(
-                    (_, index) => labelsToKeepIndexes[index]
-                );
-            }
-        }
-
-        return { datasets, labels };
     }
 
     /**
@@ -328,32 +237,34 @@ export class GanttModel extends Model {
      */
     _getProcessedDataPoints() {
         const { domains, groupBy, mode, order } = this.metaData;
+
         let processedDataPoints = [];
-        if (mode === "line") {
-            processedDataPoints = this.dataPoints.filter(
-                (dataPoint) => dataPoint.labels[0] !== this.env._t("Undefined")
-            );
-        } else {
-            processedDataPoints = this.dataPoints.filter((dataPoint) => dataPoint.count !== 0);
-        }
+        // if (mode === "line") {
+        //     processedDataPoints = this.dataPoints.filter(
+        //         (dataPoint) => dataPoint.labels[0] !== this.env._t("Undefined")
+        //     );
+        // } else {
+        //     processedDataPoints = this.dataPoints.filter((dataPoint) => dataPoint.count !== 0);
+        // }
 
-        if (order !== null && mode !== "pie" && domains.length === 1 && groupBy.length > 0) {
-            // group data by their x-axis value, and then sort datapoints
-            // based on the sum of values by group in ascending/descending order
-            const groupedDataPoints = {};
-            for (const dataPt of processedDataPoints) {
-                const key = dataPt.labels[0]; // = x-axis value under the current assumptions
-                if (!groupedDataPoints[key]) {
-                    groupedDataPoints[key] = [];
-                }
-                groupedDataPoints[key].push(dataPt);
-            }
-            const groups = Object.values(groupedDataPoints);
-            const groupTotal = (group) => group.reduce((sum, dataPt) => sum + dataPt.value, 0);
-            processedDataPoints = sortBy(groups, groupTotal, order.toLowerCase()).flat();
-        }
+        // if (order !== null && mode !== "pie" && domains.length === 1 && groupBy.length > 0) {
+        //     // group data by their x-axis value, and then sort datapoints
+        //     // based on the sum of values by group in ascending/descending order
+        //     const groupedDataPoints = {};
+        //     for (const dataPt of processedDataPoints) {
+        //         const key = dataPt.labels[0]; // = x-axis value under the current assumptions
+        //         if (!groupedDataPoints[key]) {
+        //             groupedDataPoints[key] = [];
+        //         }
+        //         groupedDataPoints[key].push(dataPt);
+        //     }
+        //     const groups = Object.values(groupedDataPoints);
+        //     const groupTotal = (group) => group.reduce((sum, dataPt) => sum + dataPt.value, 0);
+        //     processedDataPoints = sortBy(groups, groupTotal, order.toLowerCase()).flat();
+        // }
 
-        return processedDataPoints;
+        return this.dataPoints;
+        // return processedDataPoints;
     }
 
     /**
@@ -385,7 +296,8 @@ export class GanttModel extends Model {
      * @param {Object} metaData
      * @returns {Object[]}
      */
-    async _loadDataPoints(metaData) {
+    async _loadData(metaData) {
+
         const { measure, domains, fields, groupBy, resModel } = metaData;
 
         const measures = ["__count"];
@@ -405,77 +317,13 @@ export class GanttModel extends Model {
         const proms = [];
         const numbering = {}; // used to avoid ambiguity with many2one with values with same labels:
         // for instance [1, "ABC"] [3, "ABC"] should be distinguished.
+
         domains.forEach((domain, originIndex) => {
-            proms.push(
-                this.orm
-                    .webReadGroup(
-                        resModel,
-                        domain.arrayRepr,
-                        measures,
-                        groupBy.map((gb) => gb.spec),
-                        {
-                            lazy: false, // what is this thing???
-                            context: { fill_temporal: true, ...this.searchParams.context },
-                        }
-                    )
-                    .then((data) => {
-                        const dataPoints = [];
-                        for (const group of data.groups) {
-                            const { __domain, __count } = group;
-                            const labels = [];
-
-                            for (const gb of groupBy) {
-                                let label;
-                                const val = group[gb.spec];
-                                const fieldName = gb.fieldName;
-                                const { type } = fields[fieldName];
-                                if (type === "boolean") {
-                                    label = `${val}`; // toUpperCase?
-                                } else if (val === false) {
-                                    label = this.env._t("Undefined");
-                                } else if (["many2many", "many2one"].includes(type)) {
-                                    const [id, name] = val;
-                                    const key = JSON.stringify([fieldName, name]);
-                                    if (!numbering[key]) {
-                                        numbering[key] = {};
-                                    }
-                                    const numbers = numbering[key];
-                                    if (!numbers[id]) {
-                                        numbers[id] = Object.keys(numbers).length + 1;
-                                    }
-                                    const num = numbers[id];
-                                    label = num === 1 ? name : `${name} (${num})`;
-                                } else if (type === "selection") {
-                                    const selected = fields[fieldName].selection.find(
-                                        (s) => s[0] === val
-                                    );
-                                    label = selected[1];
-                                } else {
-                                    label = val;
-                                }
-                                labels.push(label);
-                            }
-
-                            let value = group[measure];
-                            if (value instanceof Array) {
-                                // case where measure is a many2one and is used as groupBy
-                                value = 1;
-                            }
-                            if (!Number.isInteger(value)) {
-                                metaData.allIntegers = false;
-                            }
-                            dataPoints.push({
-                                count: __count,
-                                domain: __domain,
-                                value,
-                                labels,
-                                originIndex,
-                            });
-                        }
-                        return dataPoints;
-                    })
-            );
+            proms.push(this.orm
+                .searchRead(resModel, domain.arrayRepr, ['id', 'name', 'date_assign', 'planned_hours', 'date_deadline'], {})
+                .then((data) => { return data; }));
         });
+
         const promResults = await Promise.all(proms);
         return promResults.flat();
     }
@@ -531,19 +379,23 @@ export class GanttModel extends Model {
      * @protected
      */
     async _prepareData() {
-        let processedDataPoints = this._getProcessedDataPoints();
-        this.data = null;
-        if (this._isValidData(processedDataPoints) && this.metaData.mode === 'pie') {
-            const positiveValues = [];
-            for (const dataPt of processedDataPoints) {
-                if (dataPt.value > 0) {
-                    positiveValues.push(dataPt);
-                }
+        const data = []
+        const links = []
+
+        console.log(this.data)
+
+        this.data.forEach(task => {
+            const _task = {
+                id: task.id,
+                text: task.name,
+                start_date: task.date_assign,
+                end_date: task.date_deadline,
+                progress: 0.5
             }
-            processedDataPoints = positiveValues;
-        } else if(this.metaData.mode === 'pie') {
-            processedDataPoints = [];
-        }
-        this.data = this._getData(processedDataPoints);
+            data.push(_task)
+        })
+
+        this.data = null
+        this.data = { data, links }
     }
 }

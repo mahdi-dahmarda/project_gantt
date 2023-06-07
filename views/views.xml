@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="product_category_view_very_basic_view" model="ir.ui.view">
-        <field name="name">Product Categories Very Basic View</field>
-        <field name="model">product.category</field>
+    <record id="project_task_gantt_view" model="ir.ui.view">
+        <field name="name">Project Tasks Gantt View</field>
+        <field name="model">project.task</field>
         <field name="arch" type="xml">
             <gantt>test</gantt>
         </field>
     </record>
 
-    <record id='product.product_category_action_form' model='ir.actions.act_window'>
-        <field name="name">Product Categories</field>
-        <field name="res_model">product.category</field>
-        <field name="view_mode">tree,gantt,form</field>
+    <record id='project.act_project_project_2_project_task_all' model='ir.actions.act_window'>
+        <field name="name">Tasks</field>
+        <field name="res_model">project.task</field>
+        <field name="view_mode">kanban,tree,form,calendar,pivot,graph,activity,gantt</field>
     </record>
 
 </odoo>
