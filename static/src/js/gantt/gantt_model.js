@@ -98,6 +98,7 @@ export class GanttModel extends Model {
         this.metaData = params;
         this.data = null;
         this.searchParams = null;
+        this.config = this._getDataProcessorConfiguration();
     }
 
     //--------------------------------------------------------------------------
@@ -144,6 +145,26 @@ export class GanttModel extends Model {
     //--------------------------------------------------------------------------
     // Protected
     //--------------------------------------------------------------------------
+
+    /**
+     * @protected
+     * @param {} 
+     * @returns {DataProcessorConfiguration}
+     */
+    _getDataProcessorConfiguration() {
+        return {
+            task: {
+                create: function (data) { },
+                update: function (data, id) { },
+                delete: function (id) { }
+            },
+            link: {
+                create: function (data) { },
+                update: function (data, id) { },
+                delete: function (id) { }
+            }
+        }
+    }
 
     /**
      * @protected
@@ -320,7 +341,7 @@ export class GanttModel extends Model {
 
         domains.forEach((domain, originIndex) => {
             proms.push(this.orm
-                .searchRead(resModel, domain.arrayRepr, ['id', 'name', 'date_assign', 'planned_hours', 'date_deadline'], {})
+                .searchRead(resModel, domain.arrayRepr, ['id', 'name', 'date_assign', 'planned_hours', 'date_deadline', 'parent_id'], {})
                 .then((data) => { return data; }));
         });
 
@@ -390,6 +411,7 @@ export class GanttModel extends Model {
                 text: task.name,
                 start_date: task.date_assign,
                 end_date: task.date_deadline,
+                parent: task.parent_id[0],
                 progress: 0.5
             }
             data.push(_task)
