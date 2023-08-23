@@ -644,19 +644,7 @@ export class GanttRenderer extends Component {
         console.log(this.model)
         gantt.config.date_format = "%Y-%m-%d %H:%i";
 
-        this.dataProcessor = gantt.createDataProcessor({
-            task: {
-                create: (data) => {
-                    console.log(this.props)
-                },
-                update: (data, id) => {
-                    console.log(data)
-                },
-                delete: (id) => {
-                    console.log(data)
-                }
-            },
-        });
+        this.dataProcessor = gantt.createDataProcessor(this.model.config);
 
         const t = this 
         gantt.attachEvent("onTaskDblClick", function(id, task){
