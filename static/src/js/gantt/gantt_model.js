@@ -114,6 +114,7 @@ export class GanttModel extends Model {
             this.initialGroupBy = searchParams.context.graph_groupbys || this.metaData.groupBy; // = arch groupBy --> change that
         }
         const metaData = this._buildMetaData();
+
         return this._fetchData(metaData);
     }
 
@@ -136,12 +137,20 @@ export class GanttModel extends Model {
             this.useSampleModel = false;
         } else {
             await this.race.getCurrentProm();
+            const metaData = this._buildMetaData(params);
+            await this._fetchData(metaData);
             this.metaData = Object.assign({}, this.metaData, params);
             this._prepareData();
         }
         this.notify();
     }
 
+    get scale() {
+        return this.metaData.scale;
+    }
+    get scales() {
+        return this.metaData.scales;
+    }
     //--------------------------------------------------------------------------
     // Protected
     //--------------------------------------------------------------------------
@@ -208,6 +217,7 @@ export class GanttModel extends Model {
      * @param {Object} metaData
      */
     async _fetchData(metaData) {
+        console.log('fetch data...')
         this.data = await this.keepLast.add(this._loadData(metaData));
         this.metaData = metaData;
         this._prepareData();
@@ -318,7 +328,7 @@ export class GanttModel extends Model {
      * @returns {Object[]}
      */
     async _loadData(metaData) {
-
+        console.log('load data...')
         const { measure, domains, fields, groupBy, resModel } = metaData;
 
         const measures = ["__count"];
@@ -339,9 +349,25 @@ export class GanttModel extends Model {
         const numbering = {}; // used to avoid ambiguity with many2one with values with same labels:
         // for instance [1, "ABC"] [3, "ABC"] should be distinguished.
 
+        
+        console.log(resModel)
+
+        let columns = [];
+
+        switch (resModel) {
+            case "project.project":
+                columns = ['id', 'name'];
+                break;
+            case "project.task":
+                columns = ['id', 'name', 'date_assign', 'planned_hours', 'date_deadline', 'parent_id'];
+                break;
+            default:
+                break;
+        }
+
         domains.forEach((domain, originIndex) => {
             proms.push(this.orm
-                .searchRead(resModel, domain.arrayRepr, ['id', 'name', 'date_assign', 'planned_hours', 'date_deadline', 'parent_id'], {})
+                .searchRead(resModel, domain.arrayRepr, columns, {})
                 .then((data) => { return data; }));
         });
 
@@ -400,22 +426,46 @@ export class GanttModel extends Model {
      * @protected
      */
     async _prepareData() {
+        console.log('prepare data...')
+        
         const data = []
         const links = []
 
-        console.log(this.data)
-
         this.data.forEach(task => {
-            const _task = {
-                id: task.id,
-                text: task.name,
-                start_date: task.date_assign,
-                end_date: task.date_deadline,
-                parent: task.parent_id[0],
-                progress: 0.5
+
+            switch (this.metaData.resModel) {
+                case "project.project":
+                    const _ta = {
+                        id: task.id,
+                        text: task.name,
+                        start_date: new Date(),
+                        duration:5,
+                        parent: 0,
+                        progress: 0.5
+                    }
+
+                    data.push(_ta)
+                    break;
+                case "project.task":
+                    const _task = {
+                        id: task.id,
+                        text: task.name,
+                        start_date: task.date_assign,
+                        end_date: task.date_deadline,
+                        parent: task.parent_id[0],
+                        progress: 0.5
+                    }
+
+                    data.push(_task)
+                    break;
+                default:
+                    break;
             }
-            data.push(_task)
+
         })
+
+       
+        console.log(data);
 
         this.data = null
         this.data = { data, links }

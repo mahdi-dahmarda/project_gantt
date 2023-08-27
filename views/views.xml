@@ -9,6 +9,51 @@
         </field>
     </record>
 
+    <record id="project_project_gantt_view" model="ir.ui.view">
+        <field name="name">Projects Gantt View</field>
+        <field name="model">project.project</field>
+        <field name="arch" type="xml">
+            <gantt>test</gantt>
+        </field>
+    </record>
+
+    <record id="project.open_view_project_all" model="ir.actions.act_window">
+        <field name="name">Projects</field>
+        <field name="res_model">project.project</field>
+        <field name="domain">[]</field>
+        <field name="view_mode">kanban,tree,form,gantt</field>
+        <field name="view_id" ref="project.view_project_kanban"/>
+        <field name="search_view_id" ref="project.view_project_project_filter"/>
+        <field name="target">main</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No projects found. Let's create one!
+            </p>
+            <p>
+                Create projects to organize your tasks. Define a different workflow for each project.
+            </p>
+        </field>
+    </record>
+
+    <record id="project.open_view_project_all_group_stage" model="ir.actions.act_window">
+        <field name="name">Projects</field>
+        <field name="res_model">project.project</field>
+        <field name="context">{'search_default_groupby_stage': 1}</field>
+        <field name="domain">[]</field>
+        <field name="view_mode">kanban,tree,form,calendar,activity,gantt</field>
+        <field name="view_id" ref="project.view_project_kanban"/>
+        <field name="search_view_id" ref="project.view_project_project_filter"/>
+        <field name="target">main</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No projects found. Let's create one!
+            </p>
+            <p>
+                Projects contain tasks on the same topic, and each has its own dashboard.
+            </p>
+        </field>
+    </record>
+
     <record id='project.act_project_project_2_project_task_all' model='ir.actions.act_window'>
         <field name="name">Tasks</field>
         <field name="res_model">project.task</field>

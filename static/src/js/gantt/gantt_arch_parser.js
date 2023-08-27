@@ -7,9 +7,18 @@ import { archParseBoolean } from "@web/views/utils";
 const MODES = ["bar", "line", "pie"];
 const ORDERS = ["ASC", "DESC", "asc", "desc", null];
 
+const SCALES = ["day", "week", "month", "quarter", "year"];
+
 export class GanttArchParser extends XMLParser {
     parse(arch, fields = {}) {
-        const archInfo = { fields, fieldAttrs: {}, groupBy: [] };
+        const archInfo = {
+            fields,
+            fieldAttrs: {},
+            groupBy: [],
+            scales: [...SCALES],
+            scale: "week"
+        };
+
         this.visitXML(arch, (node) => {
             switch (node.tagName) {
                 case "graph": {

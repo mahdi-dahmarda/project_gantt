@@ -8,13 +8,23 @@ import { GroupByMenu } from "@web/search/group_by_menu/group_by_menu";
 import { useModel } from "@web/views/model";
 import { standardViewProps } from "@web/views/standard_view_props";
 import { useSetupView } from "@web/views/view_hook";
-
+import { _lt, _t } from "@web/core/l10n/translation";
 import { Component, useRef } from "@odoo/owl";
+
+const SCALE_LABELS = {
+    day: _lt("Day"),
+    week: _lt("Week"),
+    month: _lt("Month"),
+    quarter: _lt("Quarter"),
+    year: _lt("Year"),
+};
 
 export class GanttController extends Component {
     setup() {
         this.actionService = useService("action");
         this.model = useModel(this.props.Model, this.props.modelParams);
+        this.scale = "month";
+        this.scales = ["day", "week", "month", "quarter", "year"];
 
         useSetupView({
             rootRef: useRef("root"),
@@ -104,10 +114,11 @@ export class GanttController extends Component {
     }
 
     /**
-     * @param {"bar"|"line"|"pie"} mode
+     * @param {"day"|"week"|"month"|"quarter"|"year"} scale
      */
-    onModeSelected(mode) {
-        this.model.updateMetaData({ mode });
+    onScaleSelected(scale) {
+        this.scale = scale;
+        gantt.ext.zoom.setLevel(scale);
     }
 
     /**
@@ -127,6 +138,14 @@ export class GanttController extends Component {
     toggleCumulated() {
         const { cumulated } = this.model.metaData;
         this.model.updateMetaData({ cumulated: !cumulated });
+    }
+    get scaleLabels() {
+        return SCALE_LABELS;
+    }
+
+    setScale(scale) {
+        this.scale = scale;
+        gantt.ext.zoom.setLevel(scale);
     }
 }
 

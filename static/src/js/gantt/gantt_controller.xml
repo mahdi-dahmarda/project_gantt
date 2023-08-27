@@ -8,46 +8,35 @@
                 <t t-set="activeMeasures" t-value="[model.metaData.measure]"/>
             </t>
         </div>
-        <div class="btn-group" role="toolbar" aria-label="Change graph">
-            <button class="btn btn-light fa fa-bar-chart o_graph_button" data-tooltip="Bar Chart" aria-label="Bar Chart" data-mode="bar"
-                t-on-click="() => this.onModeSelected('bar')"
-                t-att-class="{ active: model.metaData.mode === 'bar' }"
-            />
-            <button class="btn btn-light fa fa-line-chart o_graph_button" data-tooltip="Line Chart" aria-label="Line Chart" data-mode="line"
-                t-on-click="() => this.onModeSelected('line')"
-                t-att-class="{ active: model.metaData.mode === 'line' }"
-            />
-            <button class="btn btn-light fa fa-pie-chart o_graph_button" data-tooltip="Pie Chart" aria-label="Pie Chart" data-mode="pie"
-                t-on-click="() => this.onModeSelected('pie')"
-                t-att-class="{ active: model.metaData.mode === 'pie' }"
-            />
+        <div class="btn-group" role="toolbar" aria-label="Change scale">
+            <button class="btn btn-light fa fa-bar-chart o_graph_button" data-tooltip="Day" aria-label="Day" data-mode="Day" t-on-click="() => this.onScaleSelected('day')" t-att-class="{ active: scale === 'day' }" />
+            <button class="btn btn-light fa fa-line-chart o_graph_button" data-tooltip="Week" aria-label="Week" data-mode="Week" t-on-click="() => this.onScaleSelected('week')" t-att-class="{ active: scale === 'week' }" />
+            <button class="btn btn-light fa fa-pie-chart o_graph_button" data-tooltip="Month" aria-label="Month" data-mode="Month" t-on-click="() => this.onScaleSelected('month')" t-att-class="{ active: scale === 'month' }" />
         </div>
         <div t-if="model.metaData.mode === 'bar'" class="btn-group" role="toolbar" aria-label="Change graph">
-            <button class="btn btn-light fa fa-database o_graph_button" data-tooltip="Stacked" aria-label="Stacked"
-                t-on-click="toggleStacked"
-                t-att-class="{ active: model.metaData.stacked }"
-            />
+            <button class="btn btn-light fa fa-database o_graph_button" data-tooltip="Stacked" aria-label="Stacked" t-on-click="toggleStacked" t-att-class="{ active: model.metaData.stacked }" />
         </div>
         <div t-if="model.metaData.mode === 'line'" class="btn-group" role="toolbar" aria-label="Change graph">
-            <button class="btn btn-light fa fa-database o_graph_button" data-tooltip="Stacked" aria-label="Stacked"
-                t-on-click="toggleStacked"
-                t-att-class="{ active: model.metaData.stacked }"
-            />
-            <button class="btn btn-light fa fa-signal o_graph_button" data-tooltip="Cumulative" aria-label="Cumulative"
-                t-on-click="toggleCumulated"
-                t-att-class="{ active: model.metaData.cumulated }"
-            />
+            <button class="btn btn-light fa fa-database o_graph_button" data-tooltip="Stacked" aria-label="Stacked" t-on-click="toggleStacked" t-att-class="{ active: model.metaData.stacked }" />
+            <button class="btn btn-light fa fa-signal o_graph_button" data-tooltip="Cumulative" aria-label="Cumulative" t-on-click="toggleCumulated" t-att-class="{ active: model.metaData.cumulated }" />
         </div>
         <div t-if="model.metaData.mode !== 'pie' and model.metaData.domains.length === 1" class="btn-group" role="toolbar" aria-label="Sort graph" name="toggleOrderToolbar">
-            <button class="btn btn-light fa fa-sort-amount-desc o_graph_button" data-tooltip="Descending" aria-label="Descending"
-                t-on-click="() => this.toggleOrder('DESC')"
-                t-att-class="{ active: model.metaData.order === 'DESC' }"
-            />
-            <button class="btn btn-light fa fa-sort-amount-asc o_graph_button" data-tooltip="Ascending" aria-label="Ascending"
-                t-on-click="() => this.toggleOrder('ASC')"
-                t-att-class="{ active: model.metaData.order === 'ASC' }"
-            />
+            <button class="btn btn-light fa fa-sort-amount-desc o_graph_button" data-tooltip="Descending" aria-label="Descending" t-on-click="() => this.toggleOrder('DESC')" t-att-class="{ active: model.metaData.order === 'DESC' }" />
+            <button class="btn btn-light fa fa-sort-amount-asc o_graph_button" data-tooltip="Ascending" aria-label="Ascending" t-on-click="() => this.toggleOrder('ASC')" t-att-class="{ active: model.metaData.order === 'ASC' }" />
         </div>
+
+        <span class="o_calendar_scale_buttons">
+            <Dropdown class="'btn-group'" togglerClass="'btn btn-secondary scale_button_selection text-uppercase'" hotkey="'v'" showCaret="true">
+                <t t-set-slot="toggler">
+                    <t t-esc="scaleLabels[scale]" />
+                </t>
+                <t t-foreach="scales" t-as="scale" t-key="scale">
+                    <DropdownItem class="`o_calendar_button_${scale} btn btn-secondary text-uppercase`" hotkey="scale[0]" onSelected="() => this.setScale(scale)">
+                        <t t-esc="scaleLabels[scale]" />
+                    </DropdownItem>
+                </t>
+            </Dropdown>
+        </span>
     </t>
 
     <t t-name="project_gantt.GanttView" owl="1">
