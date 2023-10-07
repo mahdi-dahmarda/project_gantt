@@ -87,6 +87,7 @@ export class GanttModel extends Model {
     setup(params) {
         // concurrency management
         this.keepLast = new KeepLast();
+        // console.log("this.keepLast",this.keepLast)
         this.race = new Race();
         const _fetchData = this._fetchData.bind(this);
         this._fetchData = (...args) => {
@@ -217,10 +218,14 @@ export class GanttModel extends Model {
      * @param {Object} metaData
      */
     async _fetchData(metaData) {
-        console.log('fetch data...')
+        // console.log("metaData",metaData)
         this.data = await this.keepLast.add(this._loadData(metaData));
         this.metaData = metaData;
         this._prepareData();
+
+        console.log("metaData inside fetchData()",metaData);
+        console.log("this._loadData(metaData)",this._loadData(metaData));
+        console.log("this.keepLast.add(this._loadData(metaData)",this.keepLast.add(this._loadData(metaData)));
     }
 
     /**
@@ -328,7 +333,7 @@ export class GanttModel extends Model {
      * @returns {Object[]}
      */
     async _loadData(metaData) {
-        console.log('load data...')
+        // console.log('metaData inside _loadData',metaData)
         const { measure, domains, fields, groupBy, resModel } = metaData;
 
         const measures = ["__count"];
@@ -349,14 +354,12 @@ export class GanttModel extends Model {
         const numbering = {}; // used to avoid ambiguity with many2one with values with same labels:
         // for instance [1, "ABC"] [3, "ABC"] should be distinguished.
 
-        
-        console.log(resModel)
 
         let columns = [];
 
         switch (resModel) {
             case "project.project":
-                columns = ['id', 'name'];
+                columns = ['id', 'name','date_start','date'];
                 break;
             case "project.task":
                 columns = ['id', 'name', 'date_assign', 'planned_hours', 'date_deadline', 'parent_id'];
@@ -426,20 +429,21 @@ export class GanttModel extends Model {
      * @protected
      */
     async _prepareData() {
-        console.log('prepare data...')
         
         const data = []
         const links = []
-
+            // console.log("data after initialize",data)
         this.data.forEach(task => {
 
             switch (this.metaData.resModel) {
+
                 case "project.project":
                     const _ta = {
                         id: task.id,
                         text: task.name,
-                        start_date: new Date(),
-                        duration:5,
+                        start_date: task.date_start,
+                        end_date: task.date,
+                        // duration:5,
                         parent: 0,
                         progress: 0.5
                     }
@@ -464,10 +468,11 @@ export class GanttModel extends Model {
 
         })
 
-       
-        console.log(data);
-
         this.data = null
         this.data = { data, links }
+        console.log("this.data",this.data)
+    }
+    _saveDate(){
+        console.log("tested")
     }
 }
