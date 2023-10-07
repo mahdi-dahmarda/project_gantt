@@ -116,14 +116,17 @@ export class GanttController extends Component {
     /**
      * @param {"day"|"week"|"month"|"quarter"|"year"} scale
      */
-    onScaleSelected(scale) {
-        this.scale = scale;
-        gantt.ext.zoom.setLevel(scale);
-    }
+    // onScaleSelected(scale) {
+    //     this.scale = scale;
+    //     gantt.ext.zoom.setLevel(scale);
+    //
+    //
+    // }
 
     /**
      * @param {"ASC"|"DESC"} order
      */
+
     toggleOrder(order) {
         const { order: currentOrder } = this.model.metaData;
         const nextOrder = currentOrder === order ? null : order;
@@ -147,6 +150,7 @@ export class GanttController extends Component {
         this.scale = scale;
         gantt.ext.zoom.setLevel(scale);
     }
+
 }
 
 GanttController.template = "project_gantt.GanttView";
