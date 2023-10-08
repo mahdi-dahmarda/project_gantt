@@ -150,7 +150,6 @@ export class GanttController extends Component {
         this.scale = scale;
         gantt.ext.zoom.setLevel(scale);
     }
-
 }
 
 GanttController.template = "project_gantt.GanttView";

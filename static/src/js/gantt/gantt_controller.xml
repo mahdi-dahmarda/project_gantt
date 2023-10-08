@@ -24,6 +24,7 @@
 <!--            <button class="btn btn-light fa fa-sort-amount-desc o_graph_button" data-tooltip="Descending" aria-label="Descending" t-on-click="() => this.toggleOrder('DESC')" t-att-class="{ active: model.metaData.order === 'DESC' }" />-->
 <!--            <button class="btn btn-light fa fa-sort-amount-asc o_graph_button" data-tooltip="Ascending" aria-label="Ascending" t-on-click="() => this.toggleOrder('ASC')" t-att-class="{ active: model.metaData.order === 'ASC' }" />-->
 <!--        </div>-->
+
         <span class="o_calendar_scale_buttons">
             <Dropdown class="'btn-group'" togglerClass="'btn btn-secondary scale_button_selection text-uppercase'"   hotkey="'v'" showCaret="true">
                 <t t-set-slot="toggler">
@@ -36,6 +37,9 @@
                 </t>
             </Dropdown>
         </span>
+          <div >
+             <button class="btn btn-light" data-tooltip="Save" aria-label="Saving" t-on-click="() => this.saveDate()" >Save</button>
+        </div>
       </t>
 
     <t t-name="project_gantt.GanttView" owl="1">
