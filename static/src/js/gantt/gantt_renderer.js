@@ -712,7 +712,7 @@ export class GanttRenderer extends Component {
         };
     
         gantt.ext.zoom.init(zoomConfig);
-        gantt.ext.zoom.setLevel("year");
+        gantt.ext.zoom.setLevel("month");
         
         const { data } = this.model;
         // console.log('44444444444444444444444444')

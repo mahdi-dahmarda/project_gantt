@@ -7,6 +7,7 @@ import { getGroupBy } from "@web/search/utils/group_by";
 import { GROUPABLE_TYPES } from "@web/search/utils/misc";
 import { Model } from "@web/views/model";
 import { computeReportMeasures, processMeasure } from "@web/views/utils";
+import { useEffect } from "@odoo/owl";
 
 export const SEP = " / ";
 
@@ -87,19 +88,23 @@ export class GanttModel extends Model {
     setup(params) {
         // concurrency management
         this.keepLast = new KeepLast();
-        // console.log("this.keepLast",this.keepLast)
         this.race = new Race();
         const _fetchData = this._fetchData.bind(this);
         this._fetchData = (...args) => {
             return this.race.add(_fetchData(...args));
         };
-
         this.initialGroupBy = null;
-
         this.metaData = params;
         this.data = null;
         this.searchParams = null;
         this.config = this._getDataProcessorConfiguration();
+
+         // useEffect(
+         //    () => {
+         //       this.checkData()
+         //    },
+         //    () => [this.data]
+         // );
     }
 
     //--------------------------------------------------------------------------
@@ -470,8 +475,11 @@ export class GanttModel extends Model {
 
         this.data = null
         this.data = { data, links }
-        console.log("this.data",this.data)
+        // console.log("this.data",this.data)
     }
 
+    checkData(){
+        console.log("this.data",this.data)
+    }
 
 }
