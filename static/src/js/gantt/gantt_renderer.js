@@ -715,8 +715,8 @@ export class GanttRenderer extends Component {
         gantt.ext.zoom.setLevel("year");
         
         const { data } = this.model;
-        console.log('44444444444444444444444444')
-        console.log(data)
+        // console.log('44444444444444444444444444')
+        console.log(data);
         gantt.init("gantt_here");
         gantt.clearAll();
         gantt.parse(data);

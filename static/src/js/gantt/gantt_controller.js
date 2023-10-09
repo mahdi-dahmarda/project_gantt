@@ -9,7 +9,7 @@ import { useModel } from "@web/views/model";
 import { standardViewProps } from "@web/views/standard_view_props";
 import { useSetupView } from "@web/views/view_hook";
 import { _lt, _t } from "@web/core/l10n/translation";
-import { Component, useRef } from "@odoo/owl";
+import { Component, useRef , useEffect } from "@odoo/owl";
 
 const SCALE_LABELS = {
     day: _lt("Day"),
@@ -25,7 +25,7 @@ export class GanttController extends Component {
         this.model = useModel(this.props.Model, this.props.modelParams);
         this.scale = "month";
         this.scales = ["day", "week", "month", "quarter", "year"];
-
+        useEffect(() => this.renderDefaultSetLevel());
         useSetupView({
             rootRef: useRef("root"),
             getLocalState: () => {
@@ -149,6 +149,9 @@ export class GanttController extends Component {
     setScale(scale) {
         this.scale = scale;
         gantt.ext.zoom.setLevel(scale);
+    }
+    renderDefaultSetLevel(){
+        gantt.ext.zoom.setLevel("month");
     }
 }
 

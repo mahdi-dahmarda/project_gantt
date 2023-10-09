@@ -472,8 +472,6 @@ export class GanttModel extends Model {
         this.data = { data, links }
         console.log("this.data",this.data)
     }
-      saveDate(){
-        console.log("this.data+",this.data)
-    }
+
 
 }
