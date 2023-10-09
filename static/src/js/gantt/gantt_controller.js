@@ -25,8 +25,6 @@ export class GanttController extends Component {
         this.model = useModel(this.props.Model, this.props.modelParams);
         this.scale = "month";
         this.scales = ["day", "week", "month", "quarter", "year"];
-
-        // useEffect(() => this.renderDefaultSetLevel());
         
         useSetupView({
             rootRef: useRef("root"),
