@@ -710,17 +710,18 @@ export class GanttRenderer extends Component {
                 }
             ]
         };
-    
+
         gantt.ext.zoom.init(zoomConfig);
         gantt.ext.zoom.setLevel("month");
         
         const { data } = this.model;
-        // console.log('44444444444444444444444444')
-        console.log(data);
+        console.log("this.model",this.model);
         gantt.init("gantt_here");
         gantt.clearAll();
         gantt.parse(data);
 
+        gantt.config.sort = true; // Enable sorting on each columns
+        gantt.sort("start_date", false) // the sorting direction: true - descending, false - ascending
     }
 }
 

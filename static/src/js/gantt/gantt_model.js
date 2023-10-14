@@ -361,18 +361,18 @@ export class GanttModel extends Model {
 
 
         let columns = [];
-
+        console.log("resModel", resModel)
         switch (resModel) {
             case "project.project":
                 columns = ['id', 'name','date_start','date'];
                 break;
             case "project.task":
-                columns = ['id', 'name', 'date_assign', 'planned_hours', 'date_deadline', 'parent_id'];
+                columns = ['id', 'name', 'date_assign', 'planned_hours', 'date_deadline', 'parent_id' , 'milestone_id','project_id'];
                 break;
             default:
                 break;
         }
-
+        console.log("columns", columns)
         domains.forEach((domain, originIndex) => {
             proms.push(this.orm
                 .searchRead(resModel, domain.arrayRepr, columns, {})
@@ -434,10 +434,10 @@ export class GanttModel extends Model {
      * @protected
      */
     async _prepareData() {
-        
+
         const data = []
         const links = []
-            // console.log("data after initialize",data)
+            console.log("data after initialize",this.data)
         this.data.forEach(task => {
 
             switch (this.metaData.resModel) {
@@ -460,12 +460,12 @@ export class GanttModel extends Model {
                         id: task.id,
                         text: task.name,
                         start_date: task.date_assign,
-                        end_date: task.date_deadline,
+                        end_date: task.date_deadline ,
                         parent: task.parent_id[0],
-                        progress: 0.5
+                        progress: 0.5,
                     }
-
                     data.push(_task)
+
                     break;
                 default:
                     break;
