@@ -723,6 +723,8 @@ export class GanttRenderer extends Component {
         gantt.config.sort = true; // Enable sorting on each columns
         gantt.sort("start_date", false) // the sorting direction: true - descending, false - ascending
 
+        gantt.config.drag_progress = false;
+
         gantt.templates.rightside_text = function(start, end, task){
         if(task.type == gantt.config.types.milestone){
             return task.text;
