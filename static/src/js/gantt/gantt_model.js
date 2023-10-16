@@ -96,6 +96,7 @@ export class GanttModel extends Model {
         this.initialGroupBy = null;
         this.metaData = params;
         this.data = null;
+        this.milestone = null;
         this.searchParams = null;
         this.config = this._getDataProcessorConfiguration();
 
@@ -223,14 +224,12 @@ export class GanttModel extends Model {
      * @param {Object} metaData
      */
     async _fetchData(metaData) {
-        // console.log("metaData",metaData)
         this.data = await this.keepLast.add(this._loadData(metaData));
+        // console.log("this.data" , this.data)
         this.metaData = metaData;
         this._prepareData();
 
-        console.log("metaData inside fetchData()",metaData);
-        console.log("this._loadData(metaData)",this._loadData(metaData));
-        console.log("this.keepLast.add(this._loadData(metaData)",this.keepLast.add(this._loadData(metaData)));
+
     }
 
     /**
@@ -338,7 +337,7 @@ export class GanttModel extends Model {
      * @returns {Object[]}
      */
     async _loadData(metaData) {
-        // console.log('metaData inside _loadData',metaData)
+
         const { measure, domains, fields, groupBy, resModel } = metaData;
 
         const measures = ["__count"];
@@ -356,12 +355,13 @@ export class GanttModel extends Model {
         }
 
         const proms = [];
+        const milestone = [];
+
         const numbering = {}; // used to avoid ambiguity with many2one with values with same labels:
         // for instance [1, "ABC"] [3, "ABC"] should be distinguished.
 
 
         let columns = [];
-        console.log("resModel", resModel)
         switch (resModel) {
             case "project.project":
                 columns = ['id', 'name','date_start','date'];
@@ -372,15 +372,21 @@ export class GanttModel extends Model {
             default:
                 break;
         }
-        console.log("columns", columns)
+
         domains.forEach((domain, originIndex) => {
             proms.push(this.orm
                 .searchRead(resModel, domain.arrayRepr, columns, {})
                 .then((data) => { return data; }));
+            milestone.push(this.orm
+                    .searchRead("project.milestone",[["project_id", "=", domain.arrayRepr[0][2]]], ['id', 'project_id','name', 'deadline','reached_date'], {})
+                    .then((milestoneData) => { return milestoneData; }));
         });
 
-        const promResults = await Promise.all(proms);
-        return promResults.flat();
+
+        const AllAndMilestone = await Promise.all([Promise.all(proms), Promise.all(milestone)]);
+        const AllFlat = AllAndMilestone[0].flat();
+        this.milestone = AllAndMilestone[1].flat();
+        return AllFlat;
     }
 
     /**
@@ -434,10 +440,11 @@ export class GanttModel extends Model {
      * @protected
      */
     async _prepareData() {
-
         const data = []
         const links = []
-            console.log("data after initialize",this.data)
+    console.log("this.data", this.data)
+    console.log("this.milestone", this.milestone)
+
         this.data.forEach(task => {
 
             switch (this.metaData.resModel) {
@@ -465,17 +472,27 @@ export class GanttModel extends Model {
                         progress: 0.5,
                     }
                     data.push(_task)
-
                     break;
                 default:
                     break;
             }
 
         })
-
+            if(this.milestone){
+                   this.milestone.forEach(milestone =>{
+                        const _miles = {
+                        id: milestone.id,
+                        text: milestone.name,
+                        start_date: milestone.deadline,
+                        end_date: milestone.reached_date,
+                        type: "milestone",
+                    }
+                    data.push(_miles)
+                            })
+                    }
         this.data = null
         this.data = { data, links }
-        // console.log("this.data",this.data)
+
     }
 
     checkData(){

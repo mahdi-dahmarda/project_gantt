@@ -711,17 +711,24 @@ export class GanttRenderer extends Component {
             ]
         };
 
+
         gantt.ext.zoom.init(zoomConfig);
-        gantt.ext.zoom.setLevel("month");
+        gantt.ext.zoom.setLevel("quarter");
         
         const { data } = this.model;
-        console.log("this.model",this.model);
         gantt.init("gantt_here");
         gantt.clearAll();
         gantt.parse(data);
 
         gantt.config.sort = true; // Enable sorting on each columns
         gantt.sort("start_date", false) // the sorting direction: true - descending, false - ascending
+
+        gantt.templates.rightside_text = function(start, end, task){
+        if(task.type == gantt.config.types.milestone){
+            return task.text;
+             }
+        return "";
+        };
     }
 }
 

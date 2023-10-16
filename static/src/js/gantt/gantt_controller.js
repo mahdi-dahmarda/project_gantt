@@ -23,7 +23,7 @@ export class GanttController extends Component {
     setup() {
         this.actionService = useService("action");
         this.model = useModel(this.props.Model, this.props.modelParams);
-        this.scale = "month";
+        this.scale = "quarter";
         this.scales = ["day", "week", "month", "quarter", "year"];
         
         useSetupView({
