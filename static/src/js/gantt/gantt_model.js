@@ -367,7 +367,7 @@ export class GanttModel extends Model {
                 columns = ['id', 'name','date_start','date'];
                 break;
             case "project.task":
-                columns = ['id', 'name', 'date_assign', 'planned_hours', 'date_deadline', 'parent_id' , 'milestone_id','project_id'];
+                columns = ['id', 'name', 'date_assign', 'planned_hours', 'date_deadline', 'parent_id' , 'milestone_id','progress'];
                 break;
             default:
                 break;
@@ -469,7 +469,7 @@ export class GanttModel extends Model {
                         start_date: task.date_assign,
                         end_date: task.date_deadline ,
                         parent: task.parent_id[0],
-                        progress: 0.5,
+                        progress: task.progress/100,
                     }
                     data.push(_task)
                     break;
