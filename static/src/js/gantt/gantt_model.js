@@ -179,15 +179,27 @@ export class GanttModel extends Model {
                 delete: function (id) { }
             },
             link: {
-                create: function (data) { },
+                create: function (data) {
+                    if (data.type === '0') {
+                        _t.createLink(data)
+                    }
+                },
                 update: function (data, id) { },
                 delete: function (id) { }
             }
         }
     }
 
+    async createLink(link) {
+        const args = [
+            [Number(link.target)],
+            { "depend_on_ids": [[6, false, [Number(link.source)]]] }
+        ]
+
+        this.orm.call(this.metaData.resModel, 'write', args)
+    }
+
     async updateTask(id, data) {
-        console.log(data)
         const _task = {
             name: data.text,
             date_start: data.start_date,
@@ -380,7 +392,7 @@ export class GanttModel extends Model {
                 columns = ['id', 'name', 'date_start', 'date'];
                 break;
             case "project.task":
-                columns = ['id', 'name', 'date_start', 'planned_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress'];
+                columns = ['id', 'name', 'date_start', 'planned_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids'];
                 break;
             default:
                 break;
@@ -455,8 +467,6 @@ export class GanttModel extends Model {
     async _prepareData() {
         const data = []
         const links = []
-        console.log("this.data", this.data)
-        console.log("this.milestone", this.milestone)
 
         this.data.forEach(task => {
 
@@ -484,7 +494,25 @@ export class GanttModel extends Model {
                         parent: task.parent_id[0],
                         progress: task.progress / 100,
                     }
+                    if (task.child_ids.length > 0)
+                        _task.type = 'project'
+
+
                     data.push(_task)
+
+                    if (task.depend_on_ids.length > 0) {
+                        console.log(task)
+                        task.depend_on_ids.map(depend_id => {
+                            const _link = {
+                                id: generateKey(10),
+                                source: depend_id,
+                                target: task.id,
+                                type: '0'
+                            }
+                            links.push(_link)
+                        })
+                    }
+
                     break;
                 default:
                     break;
@@ -512,4 +540,17 @@ export class GanttModel extends Model {
         console.log("this.data", this.data)
     }
 
+
+}
+
+function generateKey(length) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < length) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        counter += 1;
+    }
+    return result;
 }
