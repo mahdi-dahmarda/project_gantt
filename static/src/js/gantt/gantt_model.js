@@ -100,12 +100,12 @@ export class GanttModel extends Model {
         this.searchParams = null;
         this.config = this._getDataProcessorConfiguration();
 
-         // useEffect(
-         //    () => {
-         //       this.checkData()
-         //    },
-         //    () => [this.data]
-         // );
+        // useEffect(
+        //    () => {
+        //       this.checkData()
+        //    },
+        //    () => [this.data]
+        // );
     }
 
     //--------------------------------------------------------------------------
@@ -168,10 +168,14 @@ export class GanttModel extends Model {
      * @returns {DataProcessorConfiguration}
      */
     _getDataProcessorConfiguration() {
+        const _t = this
+
         return {
             task: {
                 create: function (data) { },
-                update: function (data, id) { },
+                update: function (data, id) {
+                    _t.updateTask(id, data)
+                },
                 delete: function (id) { }
             },
             link: {
@@ -180,6 +184,17 @@ export class GanttModel extends Model {
                 delete: function (id) { }
             }
         }
+    }
+
+    async updateTask(id, data) {
+        console.log(data)
+        const _task = {
+            name: data.text,
+            date_start: data.start_date,
+            date_deadline: data.end_date,
+            parent_id: data.parent,
+        }
+        await this.orm.write(this.metaData.resModel, [Number(id)], _task);
     }
 
     /**
@@ -228,8 +243,6 @@ export class GanttModel extends Model {
         // console.log("this.data" , this.data)
         this.metaData = metaData;
         this._prepareData();
-
-
     }
 
     /**
@@ -364,10 +377,10 @@ export class GanttModel extends Model {
         let columns = [];
         switch (resModel) {
             case "project.project":
-                columns = ['id', 'name','date_start','date'];
+                columns = ['id', 'name', 'date_start', 'date'];
                 break;
             case "project.task":
-                columns = ['id', 'name', 'date_assign', 'planned_hours', 'date_deadline', 'parent_id' , 'milestone_id','progress'];
+                columns = ['id', 'name', 'date_start', 'planned_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress'];
                 break;
             default:
                 break;
@@ -378,8 +391,8 @@ export class GanttModel extends Model {
                 .searchRead(resModel, domain.arrayRepr, columns, {})
                 .then((data) => { return data; }));
             milestone.push(this.orm
-                    .searchRead("project.milestone",[["project_id", "=", domain.arrayRepr[0][2]]], ['id', 'project_id','name', 'deadline','reached_date'], {})
-                    .then((milestoneData) => { return milestoneData; }));
+                .searchRead("project.milestone", [["project_id", "=", domain.arrayRepr[0][2]]], ['id', 'project_id', 'name', 'deadline', 'reached_date'], {})
+                .then((milestoneData) => { return milestoneData; }));
         });
 
 
@@ -442,8 +455,8 @@ export class GanttModel extends Model {
     async _prepareData() {
         const data = []
         const links = []
-    console.log("this.data", this.data)
-    console.log("this.milestone", this.milestone)
+        console.log("this.data", this.data)
+        console.log("this.milestone", this.milestone)
 
         this.data.forEach(task => {
 
@@ -466,10 +479,10 @@ export class GanttModel extends Model {
                     const _task = {
                         id: task.id,
                         text: task.name,
-                        start_date: task.date_assign,
-                        end_date: task.date_deadline ,
+                        start_date: task.date_start,
+                        end_date: task.date_deadline,
                         parent: task.parent_id[0],
-                        progress: task.progress/100,
+                        progress: task.progress / 100,
                     }
                     data.push(_task)
                     break;
@@ -478,25 +491,25 @@ export class GanttModel extends Model {
             }
 
         })
-            if(this.milestone){
-                   this.milestone.forEach(milestone =>{
-                        const _miles = {
-                        id: milestone.id,
-                        text: milestone.name,
-                        start_date: milestone.deadline,
-                        end_date: milestone.reached_date,
-                        type: "milestone",
-                    }
-                    data.push(_miles)
-                            })
-                    }
+        if (this.milestone) {
+            this.milestone.forEach(milestone => {
+                const _miles = {
+                    id: milestone.id,
+                    text: milestone.name,
+                    start_date: milestone.deadline,
+                    end_date: milestone.reached_date,
+                    type: "milestone",
+                }
+                data.push(_miles)
+            })
+        }
         this.data = null
         this.data = { data, links }
 
     }
 
-    checkData(){
-        console.log("this.data",this.data)
+    checkData() {
+        console.log("this.data", this.data)
     }
 
 }

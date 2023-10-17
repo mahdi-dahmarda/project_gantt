@@ -641,56 +641,61 @@ export class GanttRenderer extends Component {
      * the current config.
      */
     renderChart() {
+
+        gantt.config.order_branch = true;
+        gantt.config.order_branch_free = true;
         gantt.config.date_format = "%Y-%m-%d %H:%i";
 
         this.dataProcessor = gantt.createDataProcessor(this.model.config);
 
-        const t = this 
-        gantt.attachEvent("onTaskDblClick", function(id, task){
+        const t = this
+        gantt.attachEvent("onTaskDblClick", function (id, task) {
             console.log(id)
             t.onGraphClicked(Number(id))
             return false;
         });
-
+        
         var zoomConfig = {
             levels: [
                 {
-                    name:"day",
+                    name: "day",
                     scale_height: 27,
-                    min_column_width:80,
-                    scales:[
-                        {unit: "day", step: 1, format: "%d %M"}
+                    min_column_width: 80,
+                    scales: [
+                        { unit: "day", step: 1, format: "%d %M" }
                     ]
                 },
                 {
-                    name:"week",
+                    name: "week",
                     scale_height: 50,
-                    min_column_width:50,
-                    scales:[
-                        {unit: "week", step: 1, format: function (date) {
-                            var dateToStr = gantt.date.date_to_str("%d %M");
-                            var endDate = gantt.date.add(date, -6, "day");
-                            var weekNum = gantt.date.date_to_str("%W")(date);
-                            return "#" + weekNum + ", " + dateToStr(date) + " - " + dateToStr(endDate);
-                        }},
-                        {unit: "day", step: 1, format: "%j %D"}
+                    min_column_width: 50,
+                    scales: [
+                        {
+                            unit: "week", step: 1, format: function (date) {
+                                var dateToStr = gantt.date.date_to_str("%d %M");
+                                var endDate = gantt.date.add(date, -6, "day");
+                                var weekNum = gantt.date.date_to_str("%W")(date);
+                                return "#" + weekNum + ", " + dateToStr(date) + " - " + dateToStr(endDate);
+                            }
+                        },
+                        { unit: "day", step: 1, format: "%j %D" }
                     ]
                 },
                 {
-                    name:"month",
+                    name: "month",
                     scale_height: 50,
-                    min_column_width:120,
-                    scales:[
-                        {unit: "month", format: "%F, %Y"},
-                        {unit: "week", format: "Week #%W"}
+                    min_column_width: 120,
+                    scales: [
+                        { unit: "month", format: "%F, %Y" },
+                        { unit: "week", format: "Week #%W" }
                     ]
                 },
                 {
-                    name:"quarter",
+                    name: "quarter",
                     height: 50,
-                    min_column_width:90,
-                    scales:[
-                        {unit: "month", step: 1, format: "%M"},
+                    min_column_width: 90,
+                    scales: [
+                        { unit: "month", step: 1, format: "%M" },
                         {
                             unit: "quarter", step: 1, format: function (date) {
                                 var dateToStr = gantt.date.date_to_str("%M");
@@ -701,11 +706,11 @@ export class GanttRenderer extends Component {
                     ]
                 },
                 {
-                    name:"year",
+                    name: "year",
                     scale_height: 50,
                     min_column_width: 30,
-                    scales:[
-                        {unit: "year", step: 1, format: "%Y"}
+                    scales: [
+                        { unit: "year", step: 1, format: "%Y" }
                     ]
                 }
             ]
@@ -714,7 +719,7 @@ export class GanttRenderer extends Component {
 
         gantt.ext.zoom.init(zoomConfig);
         gantt.ext.zoom.setLevel("quarter");
-        
+
         const { data } = this.model;
         gantt.init("gantt_here");
         gantt.clearAll();
@@ -725,11 +730,11 @@ export class GanttRenderer extends Component {
 
         gantt.config.drag_progress = false;
 
-        gantt.templates.rightside_text = function(start, end, task){
-        if(task.type == gantt.config.types.milestone){
-            return task.text;
-             }
-        return "";
+        gantt.templates.rightside_text = function (start, end, task) {
+            if (task.type == gantt.config.types.milestone) {
+                return task.text;
+            }
+            return "";
         };
     }
 }
