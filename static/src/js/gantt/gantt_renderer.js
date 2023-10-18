@@ -644,6 +644,7 @@ export class GanttRenderer extends Component {
 
         gantt.config.order_branch = true;
         gantt.config.order_branch_free = true;
+        gantt.config.open_tree_initially = true;
         gantt.config.date_format = "%Y-%m-%d %H:%i";
 
         this.dataProcessor = gantt.createDataProcessor(this.model.config);
@@ -654,7 +655,7 @@ export class GanttRenderer extends Component {
             t.onGraphClicked(Number(id))
             return false;
         });
-        
+
         var zoomConfig = {
             levels: [
                 {
