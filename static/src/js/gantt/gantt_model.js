@@ -100,12 +100,12 @@ export class GanttModel extends Model {
         this.searchParams = null;
         this.config = this._getDataProcessorConfiguration();
 
-         // useEffect(
-         //    () => {
-         //       this.checkData()
-         //    },
-         //    () => [this.data]
-         // );
+        // useEffect(
+        //    () => {
+        //       this.checkData()
+        //    },
+        //    () => [this.data]
+        // );
     }
 
     //--------------------------------------------------------------------------
@@ -168,19 +168,63 @@ export class GanttModel extends Model {
      * @returns {DataProcessorConfiguration}
      */
     _getDataProcessorConfiguration() {
+        const _t = this
+
         return {
             task: {
-                create: function (data) { },
-                update: function (data, id) { },
+                create: function (data) {
+                    _t.createTask(data)
+                },
+                update: function (data, id) {
+                    _t.updateTask(id, data)
+                },
                 delete: function (id) { }
             },
             link: {
-                create: function (data) { },
+                create: function (data) {
+                    if (data.type === '0') {
+                        _t.createLink(data)
+                    }
+                },
                 update: function (data, id) { },
-                delete: function (id) { }
+                delete: function (id) {
+                    
+                }
             }
         }
     }
+
+    async createTask(data) {
+        
+        const _task = {
+            name: data.text,
+            date_start: data.start_date,
+            date_deadline: data.end_date,
+            parent_id: data.parent,
+            project_id: this.metaData.context.active_id,
+        }
+        await this.orm.create(this.metaData.resModel, [_task]);
+    }
+    async updateTask(id, data) {
+        const _task = {
+            name: data.text,
+            date_start: data.start_date,
+            date_deadline: data.end_date,
+            parent_id: data.parent,
+        }
+        await this.orm.write(this.metaData.resModel, [Number(id)], _task);
+    }
+
+    async createLink(link) {
+        const args = [
+            [Number(link.target)],
+            { "depend_on_ids": [[6, false, [Number(link.source)]]] }
+        ]
+
+        this.orm.call(this.metaData.resModel, 'write', args)
+    }
+
+
 
     /**
      * @protected
@@ -228,8 +272,6 @@ export class GanttModel extends Model {
         // console.log("this.data" , this.data)
         this.metaData = metaData;
         this._prepareData();
-
-
     }
 
     /**
@@ -364,10 +406,10 @@ export class GanttModel extends Model {
         let columns = [];
         switch (resModel) {
             case "project.project":
-                columns = ['id', 'name','date_start','date'];
+                columns = ['id', 'name', 'date_start', 'date'];
                 break;
             case "project.task":
-                columns = ['id', 'name', 'date_assign', 'planned_hours', 'date_deadline', 'parent_id' , 'milestone_id','progress'];
+                columns = ['id', 'name', 'date_start', 'planned_hours', 'subtask_planned_hours', 'subtask_effective_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids'];
                 break;
             default:
                 break;
@@ -378,8 +420,8 @@ export class GanttModel extends Model {
                 .searchRead(resModel, domain.arrayRepr, columns, {})
                 .then((data) => { return data; }));
             milestone.push(this.orm
-                    .searchRead("project.milestone",[["project_id", "=", domain.arrayRepr[0][2]]], ['id', 'project_id','name', 'deadline','reached_date'], {})
-                    .then((milestoneData) => { return milestoneData; }));
+                .searchRead("project.milestone", [["project_id", "=", domain.arrayRepr[0][2]]], ['id', 'project_id', 'name', 'deadline', 'reached_date'], {})
+                .then((milestoneData) => { return milestoneData; }));
         });
 
 
@@ -442,8 +484,6 @@ export class GanttModel extends Model {
     async _prepareData() {
         const data = []
         const links = []
-    console.log("this.data", this.data)
-    console.log("this.milestone", this.milestone)
 
         this.data.forEach(task => {
 
@@ -466,37 +506,71 @@ export class GanttModel extends Model {
                     const _task = {
                         id: task.id,
                         text: task.name,
-                        start_date: task.date_assign,
-                        end_date: task.date_deadline ,
+                        start_date: task.date_start,
+                        end_date: task.date_deadline,
                         parent: task.parent_id[0],
-                        progress: task.progress/100,
+                        progress: task.progress / 100,
                     }
+                    if (task.child_ids.length > 0) {
+                        _task.type = 'project';
+                        _task.progress = task.subtask_effective_hours / task.subtask_planned_hours;
+                    }
+
+
+
                     data.push(_task)
+
+                    if (task.depend_on_ids.length > 0) {
+                        console.log(task)
+                        task.depend_on_ids.map(depend_id => {
+                            const _link = {
+                                id: generateKey(10),
+                                source: depend_id,
+                                target: task.id,
+                                type: '0'
+                            }
+                            links.push(_link)
+                        })
+                    }
+
                     break;
                 default:
                     break;
             }
 
         })
-            if(this.milestone){
-                   this.milestone.forEach(milestone =>{
-                        const _miles = {
-                        id: milestone.id,
-                        text: milestone.name,
-                        start_date: milestone.deadline,
-                        end_date: milestone.reached_date,
-                        type: "milestone",
-                    }
-                    data.push(_miles)
-                            })
-                    }
+        if (this.milestone) {
+            this.milestone.forEach(milestone => {
+                const _miles = {
+                    id: milestone.id,
+                    text: milestone.name,
+                    start_date: milestone.deadline,
+                    end_date: milestone.reached_date,
+                    type: "milestone",
+                }
+                data.push(_miles)
+            })
+        }
         this.data = null
         this.data = { data, links }
 
     }
 
-    checkData(){
-        console.log("this.data",this.data)
+    checkData() {
+        console.log("this.data", this.data)
     }
 
+
+}
+
+function generateKey(length) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < length) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        counter += 1;
+    }
+    return result;
 }
