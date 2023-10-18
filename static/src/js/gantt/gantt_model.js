@@ -392,7 +392,7 @@ export class GanttModel extends Model {
                 columns = ['id', 'name', 'date_start', 'date'];
                 break;
             case "project.task":
-                columns = ['id', 'name', 'date_start', 'planned_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids'];
+                columns = ['id', 'name', 'date_start', 'planned_hours', 'subtask_planned_hours', 'subtask_effective_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids'];
                 break;
             default:
                 break;
@@ -494,8 +494,11 @@ export class GanttModel extends Model {
                         parent: task.parent_id[0],
                         progress: task.progress / 100,
                     }
-                    if (task.child_ids.length > 0)
-                        _task.type = 'project'
+                    if (task.child_ids.length > 0) {
+                        _task.type = 'project';
+                        _task.progress = task.subtask_effective_hours / task.subtask_planned_hours;
+                    }
+
 
 
                     data.push(_task)
