@@ -172,7 +172,9 @@ export class GanttModel extends Model {
 
         return {
             task: {
-                create: function (data) { },
+                create: function (data) {
+                    _t.createTask(data)
+                },
                 update: function (data, id) {
                     _t.updateTask(id, data)
                 },
@@ -185,9 +187,32 @@ export class GanttModel extends Model {
                     }
                 },
                 update: function (data, id) { },
-                delete: function (id) { }
+                delete: function (id) {
+                    
+                }
             }
         }
+    }
+
+    async createTask(data) {
+        
+        const _task = {
+            name: data.text,
+            date_start: data.start_date,
+            date_deadline: data.end_date,
+            parent_id: data.parent,
+            project_id: this.metaData.context.active_id,
+        }
+        await this.orm.create(this.metaData.resModel, [_task]);
+    }
+    async updateTask(id, data) {
+        const _task = {
+            name: data.text,
+            date_start: data.start_date,
+            date_deadline: data.end_date,
+            parent_id: data.parent,
+        }
+        await this.orm.write(this.metaData.resModel, [Number(id)], _task);
     }
 
     async createLink(link) {
@@ -199,15 +224,7 @@ export class GanttModel extends Model {
         this.orm.call(this.metaData.resModel, 'write', args)
     }
 
-    async updateTask(id, data) {
-        const _task = {
-            name: data.text,
-            date_start: data.start_date,
-            date_deadline: data.end_date,
-            parent_id: data.parent,
-        }
-        await this.orm.write(this.metaData.resModel, [Number(id)], _task);
-    }
+
 
     /**
      * @protected
