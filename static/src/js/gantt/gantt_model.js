@@ -178,19 +178,18 @@ export class GanttModel extends Model {
                 create: function (data) {
                     if (data.type === '0') {
                         _t.createLink(data)
-
                     }
                 },
                 update: function (data, id) { },
-                delete: function (data) {
-                    _t.deleteLink(data)
+                delete: function (id) {
+
                 }
             }
         }
     }
 
     async createTask(data) {
-        
+
         const _task = {
             name: data.text,
             date_start: data.start_date,
@@ -199,8 +198,7 @@ export class GanttModel extends Model {
             project_id: this.metaData.context.active_id,
         }
         await this.orm.create(this.metaData.resModel, [_task]);
-       this.updateMetaData(this.metaData)
-
+        this.updateMetaData(this.metaData);
     }
     async updateTask(id, data) {
         const _task = {
@@ -217,13 +215,9 @@ export class GanttModel extends Model {
             [Number(link.target)],
             { "depend_on_ids": [[6, false, [Number(link.source)]]] }
         ]
+
         this.orm.call(this.metaData.resModel, 'write', args)
     }
-
-    async deleteLink(data,id) {
-               // this.orm.call(this.metaData.resModel, 'unlink', [this.milestone.id]);
-    }
-
 
 
     /**
