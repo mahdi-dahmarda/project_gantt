@@ -158,7 +158,7 @@ export class GanttModel extends Model {
 
     /**
      * @protected
-     * @param {} 
+     * @param {}
      * @returns {DataProcessorConfiguration}
      */
     _getDataProcessorConfiguration() {
@@ -178,11 +178,12 @@ export class GanttModel extends Model {
                 create: function (data) {
                     if (data.type === '0') {
                         _t.createLink(data)
+
                     }
                 },
                 update: function (data, id) { },
-                delete: function (id) {
-
+                delete: function (data) {
+                    _t.deleteLink(data)
                 }
             }
         }
@@ -198,7 +199,6 @@ export class GanttModel extends Model {
             project_id: this.metaData.context.active_id,
         }
         await this.orm.create(this.metaData.resModel, [_task]);
-        this.updateMetaData(this.metaData);
     }
     async updateTask(id, data) {
         const _task = {
@@ -215,9 +215,13 @@ export class GanttModel extends Model {
             [Number(link.target)],
             { "depend_on_ids": [[6, false, [Number(link.source)]]] }
         ]
-
         this.orm.call(this.metaData.resModel, 'write', args)
     }
+
+    async deleteLink(data,id) {
+               // this.orm.call(this.metaData.resModel, 'unlink', [this.milestone.id]);
+    }
+
 
 
     /**
@@ -510,17 +514,24 @@ export class GanttModel extends Model {
                         _task.type = 'project';
                         _task.progress = task.subtask_effective_hours / task.subtask_planned_hours;
                     }
-                    
+
+
                     if(task.date_start === false){
-                        if(task.date_assign){ _task.start_date = task.date_assign; }
-                        else { _task.start_date = task.create_date; }
+                        if(task.date_assign){
+                            _task.start_date = task.date_assign;
+                        }
+                        else { _task.start_date = task.create_date;
+                        }
                     }
 
                     if(task.date_deadline === false){
-                        if(task.date_end){ _task.end_date = task.date_end; }
-                        else { _task.end_date = this.now; }
+                        if(task.date_end){
+                            _task.end_date = task.date_end;
+                        }
+                        else {
+                                _task.end_date = this.now;
+                        }
                     }
-
                     data.push(_task)
 
                     if (task.depend_on_ids.length > 0) {
