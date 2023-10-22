@@ -188,14 +188,14 @@ export class GanttModel extends Model {
                 },
                 update: function (data, id) { },
                 delete: function (id) {
-                    
+
                 }
             }
         }
     }
 
     async createTask(data) {
-        
+
         const _task = {
             name: data.text,
             date_start: data.start_date,
@@ -506,7 +506,7 @@ export class GanttModel extends Model {
                     const _task = {
                         id: task.id,
                         text: task.name,
-                        start_date: task.date_start,
+                        start_date: task.date_start ? task.date_start : task.assign,
                         end_date: task.date_deadline,
                         parent: task.parent_id[0],
                         progress: task.progress / 100,
@@ -544,8 +544,8 @@ export class GanttModel extends Model {
                 const _miles = {
                     id: milestone.id,
                     text: milestone.name,
-                    start_date: milestone.deadline,
-                    end_date: milestone.reached_date,
+                    start_date: milestone.deadline ? milestone.deadline : new Date(),
+                    end_date: milestone.reached_date ? milestone.reached_date : new Date(),
                     type: "milestone",
                 }
                 data.push(_miles)
