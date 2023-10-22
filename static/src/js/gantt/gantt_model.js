@@ -96,16 +96,10 @@ export class GanttModel extends Model {
         this.initialGroupBy = null;
         this.metaData = params;
         this.data = null;
-        this.milestone = null;
+        this.milestones = null;
         this.searchParams = null;
         this.config = this._getDataProcessorConfiguration();
-
-        // useEffect(
-        //    () => {
-        //       this.checkData()
-        //    },
-        //    () => [this.data]
-        // );
+        this.now = new Date();
     }
 
     //--------------------------------------------------------------------------
@@ -164,7 +158,7 @@ export class GanttModel extends Model {
 
     /**
      * @protected
-     * @param {} 
+     * @param {}
      * @returns {DataProcessorConfiguration}
      */
     _getDataProcessorConfiguration() {
@@ -184,11 +178,12 @@ export class GanttModel extends Model {
                 create: function (data) {
                     if (data.type === '0') {
                         _t.createLink(data)
+
                     }
                 },
                 update: function (data, id) { },
-                delete: function (id) {
-
+                delete: function (data) {
+                    _t.deleteLink(data)
                 }
             }
         }
@@ -220,8 +215,11 @@ export class GanttModel extends Model {
             [Number(link.target)],
             { "depend_on_ids": [[6, false, [Number(link.source)]]] }
         ]
-
         this.orm.call(this.metaData.resModel, 'write', args)
+    }
+
+    async deleteLink(data,id) {
+               // this.orm.call(this.metaData.resModel, 'unlink', [this.milestone.id]);
     }
 
 
@@ -269,7 +267,6 @@ export class GanttModel extends Model {
      */
     async _fetchData(metaData) {
         this.data = await this.keepLast.add(this._loadData(metaData));
-        // console.log("this.data" , this.data)
         this.metaData = metaData;
         this._prepareData();
     }
@@ -397,7 +394,7 @@ export class GanttModel extends Model {
         }
 
         const proms = [];
-        const milestone = [];
+        const milestones = [];
 
         const numbering = {}; // used to avoid ambiguity with many2one with values with same labels:
         // for instance [1, "ABC"] [3, "ABC"] should be distinguished.
@@ -409,7 +406,7 @@ export class GanttModel extends Model {
                 columns = ['id', 'name', 'date_start', 'date'];
                 break;
             case "project.task":
-                columns = ['id', 'name', 'date_start', 'planned_hours', 'subtask_planned_hours', 'subtask_effective_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids'];
+                columns = ['id', 'name', 'date_start','date_assign','create_date','date_end', 'planned_hours', 'subtask_planned_hours', 'subtask_effective_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids'];
                 break;
             default:
                 break;
@@ -419,16 +416,18 @@ export class GanttModel extends Model {
             proms.push(this.orm
                 .searchRead(resModel, domain.arrayRepr, columns, {})
                 .then((data) => { return data; }));
-            milestone.push(this.orm
+            console.log("proms",proms)
+            if(resModel === 'project.task'){
+                 milestones.push(this.orm
                 .searchRead("project.milestone", [["project_id", "=", domain.arrayRepr[0][2]]], ['id', 'project_id', 'name', 'deadline', 'reached_date'], {})
                 .then((milestoneData) => { return milestoneData; }));
+            }
         });
 
-
-        const AllAndMilestone = await Promise.all([Promise.all(proms), Promise.all(milestone)]);
-        const AllFlat = AllAndMilestone[0].flat();
-        this.milestone = AllAndMilestone[1].flat();
-        return AllFlat;
+        const All_data = await Promise.all(proms);
+        const milestoneData = await Promise.all(milestones);
+        this.milestones = milestoneData.flat();
+        return All_data.flat();
     }
 
     /**
@@ -517,7 +516,22 @@ export class GanttModel extends Model {
                     }
 
 
+                    if(task.date_start === false){
+                        if(task.date_assign){
+                            _task.start_date = task.date_assign;
+                        }
+                        else { _task.start_date = task.create_date;
+                        }
+                    }
 
+                    if(task.date_deadline === false){
+                        if(task.date_end){
+                            _task.end_date = task.date_end;
+                        }
+                        else {
+                                _task.end_date = this.now;
+                        }
+                    }
                     data.push(_task)
 
                     if (task.depend_on_ids.length > 0) {
@@ -539,8 +553,8 @@ export class GanttModel extends Model {
             }
 
         })
-        if (this.milestone) {
-            this.milestone.forEach(milestone => {
+        if (this.milestones) {
+            this.milestones.forEach(milestone => {
                 const _miles = {
                     id: milestone.id,
                     text: milestone.name,
@@ -555,11 +569,6 @@ export class GanttModel extends Model {
         this.data = { data, links }
 
     }
-
-    checkData() {
-        console.log("this.data", this.data)
-    }
-
 
 }
 
