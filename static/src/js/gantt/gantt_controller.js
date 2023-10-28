@@ -23,7 +23,7 @@ export class GanttController extends Component {
     setup() {
         this.actionService = useService("action");
         this.model = useModel(this.props.Model, this.props.modelParams);
-        this.scale = "quarter";
+        this.scale = "week";
         this.scales = ["day", "week", "month", "quarter", "year"];
 
         useSetupView({
@@ -64,8 +64,7 @@ export class GanttController extends Component {
      * @param {Object} context
      */
     openView(domain, views, context) {
-        console.log(this.model.metaData)
-        this.actionService.doAction(
+      this.actionService.doAction(
             {
                 context,
                 domain,
@@ -86,8 +85,7 @@ export class GanttController extends Component {
     onGraphClicked(id) {
         const { context } = this.model.metaData;
 
-        this.actionService.doAction(
-            {
+                this.actionService.doAction({
                 name: this.model.metaData.title,
                 res_model: this.model.metaData.resModel,
                 res_id: id,
@@ -95,14 +93,17 @@ export class GanttController extends Component {
                 type: "ir.actions.act_window",
                 views: [[false, 'form']],
                 viewType: "form",
-                context: {}
+                context: {},
+                domain: [],
             },
-            {
-                onClose: () => {
-                    this.model.updateMetaData(this.model.metaData)
-                },
-            }
+                    {
+                        onClose: () => {
+                            this.model.updateMetaData(this.model.metaData)
+                        },
+                    }
         );
+
+
     }
 
     /**

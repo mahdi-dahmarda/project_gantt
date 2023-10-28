@@ -1,15 +1,15 @@
 /** @odoo-module **/
 
-import { _lt } from "@web/core/l10n/translation";
-import { getBorderWhite, DEFAULT_BG, getColor, hexToRGBA } from "./colors";
-import { formatFloat } from "@web/views/fields/formatters";
-import { SEP } from "./gantt_model";
-import { sortBy } from "@web/core/utils/arrays";
-import { loadJS } from "@web/core/assets";
-import { renderToString } from "@web/core/utils/render";
-import { useService } from "@web/core/utils/hooks";
+import {_lt} from "@web/core/l10n/translation";
+import {getBorderWhite, DEFAULT_BG, getColor, hexToRGBA} from "./colors";
+import {formatFloat} from "@web/views/fields/formatters";
+import {SEP} from "./gantt_model";
+import {sortBy} from "@web/core/utils/arrays";
+import {loadJS} from "@web/core/assets";
+import {renderToString} from "@web/core/utils/render";
+import {useService} from "@web/core/utils/hooks";
 
-import { Component, onWillUnmount, useEffect, useRef, onWillStart } from "@odoo/owl";
+import {Component, onWillUnmount, useEffect, useRef, onWillStart} from "@odoo/owl";
 
 const NO_DATA = _lt("No data");
 
@@ -20,7 +20,7 @@ export const LINE_FILL_TRANSPARENCY = 0.4;
  * @returns {string}
  */
 function getMaxWidth(chartArea) {
-    const { left, right } = chartArea;
+    const {left, right} = chartArea;
     return Math.floor((right - left) / 1.618) + "px";
 }
 
@@ -45,15 +45,14 @@ export class GanttRenderer extends Component {
     setup() {
         this.model = this.props.model;
         this.onGraphClicked = this.props.onGraphClicked;
-
         this.rootRef = useRef("root");
         this.canvasRef = useRef("canvas");
         this.containerRef = useRef("container");
         this.cookies = useService("cookie");
 
         this.dataProcessor = null;
-        this.tooltip = null;
-        this.legendTooltip = null;
+        // this.tooltip = null;
+        // this.legendTooltip = null;
 
         onWillStart(() => loadJS("/web/static/lib/Chart/Chart.js"));
 
@@ -106,9 +105,9 @@ export class GanttRenderer extends Component {
      * @param {Object} tooltipModel see chartjs documentation
      */
     customTooltip(data, metaData, tooltipModel) {
-        const { measure, measures, disableLinking, mode } = metaData;
+        const {measure, measures, disableLinking, mode} = metaData;
         this.rootRef.el.style.cursor = "";
-        this.removeTooltips();
+        // this.removeTooltips();
         if (tooltipModel.opacity === 0 || tooltipModel.dataPoints.length === 0) {
             return;
         }
@@ -121,9 +120,9 @@ export class GanttRenderer extends Component {
             maxWidth: getMaxWidth(this.chart.chartArea),
             measure: measures[measure].string,
             mode: this.model.metaData.mode,
-            tooltipItems: this.getTooltipItems(data, metaData, tooltipModel),
+            // tooltipItems: this.getTooltipItems(data, metaData, tooltipModel),
         });
-        const template = Object.assign(document.createElement("template"), { innerHTML });
+        const template = Object.assign(document.createElement("template"), {innerHTML});
         const tooltip = template.content.firstChild;
         this.containerRef.el.prepend(tooltip);
 
@@ -155,10 +154,10 @@ export class GanttRenderer extends Component {
             // cut it the minimum possible.
             top = minTopAllowed;
             const maxTooltipHeight = window.innerHeight - (viewContentTop + chartAreaTop) - 2;
-            this.adjustTooltipHeight(tooltip, maxTooltipHeight);
+            // this.adjustTooltipHeight(tooltip, maxTooltipHeight);
         }
-        this.fixTooltipLeftPosition(tooltip, tooltipModel.x);
-        tooltip.style.top = Math.floor(top) + "px";
+        // this.fixTooltipLeftPosition(tooltip, tooltipModel.x);
+        // tooltip.style.top = Math.floor(top) + "px";
 
         this.tooltip = tooltip;
     }
@@ -196,7 +195,7 @@ export class GanttRenderer extends Component {
             return String(value);
         }
         if (largeNumber) {
-            return formatFloat(value, { humanReadable: true, decimals: 2, minDigits: 1 });
+            return formatFloat(value, {humanReadable: true, decimals: 2, minDigits: 1});
         }
         return formatFloat(value);
     }
@@ -207,7 +206,7 @@ export class GanttRenderer extends Component {
      */
     getBarChartData() {
         // style data
-        const { domains, stacked } = this.model.metaData;
+        const {domains, stacked} = this.model.metaData;
         const data = this.model.data;
         for (let index = 0; index < data.datasets.length; ++index) {
             const dataset = data.datasets[index];
@@ -227,7 +226,7 @@ export class GanttRenderer extends Component {
      * @returns {Object}
      */
     getChartConfig() {
-        const { mode } = this.model.metaData;
+        const {mode} = this.model.metaData;
         let data;
         data = this.model.data;
         const options = {};
@@ -248,12 +247,12 @@ export class GanttRenderer extends Component {
      * @returns {Object}
      */
     getElementOptions() {
-        const { mode, stacked } = this.model.metaData;
+        const {mode, stacked} = this.model.metaData;
         const elementOptions = {};
         if (mode === "bar") {
-            elementOptions.rectangle = { borderWidth: 1 };
+            elementOptions.rectangle = {borderWidth: 1};
         } else if (mode === "line") {
-            elementOptions.line = { fill: stacked, tension: 0 };
+            elementOptions.line = {fill: stacked, tension: 0};
         }
         return elementOptions;
     }
@@ -262,7 +261,7 @@ export class GanttRenderer extends Component {
      * @returns {Object}
      */
     getLegendOptions() {
-        const { mode } = this.model.metaData;
+        const {mode} = this.model.metaData;
         const data = this.model.data;
         const refLength = mode === "pie" ? data.labels.length : data.datasets.length;
         const legendOptions = {
@@ -277,7 +276,7 @@ export class GanttRenderer extends Component {
         if (mode === "pie") {
             legendOptions.labels = {
                 generateLabels: (chart) => {
-                    const { data } = chart;
+                    const {data} = chart;
                     const metaData = data.datasets.map(
                         (_, index) => chart.getDatasetMeta(index).data
                     );
@@ -289,7 +288,7 @@ export class GanttRenderer extends Component {
                             label === NO_DATA
                                 ? DEFAULT_BG
                                 : getColor(index, this.cookies.current.color_scheme);
-                        return { text, fullText, fillStyle, hidden, index };
+                        return {text, fullText, fillStyle, hidden, index};
                     });
                     return labels;
                 },
@@ -298,7 +297,7 @@ export class GanttRenderer extends Component {
             const referenceColor = mode === "bar" ? "backgroundColor" : "borderColor";
             legendOptions.labels = {
                 generateLabels: (chart) => {
-                    const { data } = chart;
+                    const {data} = chart;
                     const labels = data.datasets.map((dataset, index) => {
                         return {
                             text: shortenLabel(dataset.label),
@@ -327,7 +326,7 @@ export class GanttRenderer extends Component {
      * @returns {Object}
      */
     getLineChartData() {
-        const { groupBy, domains, stacked, cumulated } = this.model.metaData;
+        const {groupBy, domains, stacked, cumulated} = this.model.metaData;
         const data = this.model.data;
         const color0 = getColor(0, this.cookies.current.color_scheme);
         const color1 = getColor(1, this.cookies.current.color_scheme);
@@ -384,7 +383,7 @@ export class GanttRenderer extends Component {
      * @returns {Object}
      */
     getPieChartData() {
-        const { domains } = this.model.metaData;
+        const {domains} = this.model.metaData;
         const data = this.model.data;
         // style/complete data
         // give same color to same groups from different origins
@@ -447,7 +446,7 @@ export class GanttRenderer extends Component {
                 display: Boolean(groupBy.length),
                 labelString: groupBy.length ? fields[groupBy[0].fieldName].string : "",
             },
-            ticks: { callback: (value) => shortenLabel(value) },
+            ticks: {callback: (value) => shortenLabel(value)},
         };
         const yAxe = {
             type: "linear",
@@ -461,7 +460,7 @@ export class GanttRenderer extends Component {
             },
             stacked: mode === "line" && stacked ? stacked : undefined,
         };
-        return { xAxes: [xAxe], yAxes: [yAxe] };
+        return {xAxes: [xAxe], yAxes: [yAxe]};
     }
 
     /**
@@ -475,7 +474,7 @@ export class GanttRenderer extends Component {
      * @returns {Object[]}
      */
     getTooltipItems(data, metaData, tooltipModel) {
-        const { allIntegers, domains, mode, groupBy } = metaData;
+        const {allIntegers, domains, mode, groupBy} = metaData;
         const sortedDataPoints = sortBy(tooltipModel.dataPoints, "yLabel", "desc");
         const items = [];
         for (const item of sortedDataPoints) {
@@ -501,7 +500,7 @@ export class GanttRenderer extends Component {
                 }
                 boxColor = mode === "bar" ? dataset.backgroundColor : dataset.borderColor;
             }
-            items.push({ label, value, boxColor, percentage });
+            items.push({label, value, boxColor, percentage});
         }
         return items;
     }
@@ -511,11 +510,11 @@ export class GanttRenderer extends Component {
      * @returns {Object}
      */
     getTooltipOptions() {
-        const { data, metaData } = this.model;
-        const { mode } = metaData;
+        const {data, metaData} = this.model;
+        const {mode} = metaData;
         const tooltipOptions = {
             enabled: false,
-            custom: this.customTooltip.bind(this, data, metaData),
+            // custom: this.customTooltip.bind(this, data, metaData),
         };
         if (mode === "line") {
             tooltipOptions.mode = "index";
@@ -533,8 +532,8 @@ export class GanttRenderer extends Component {
         if (!activeElement) {
             return;
         }
-        const { _datasetIndex, _index } = activeElement;
-        const { domains } = this.chart.data.datasets[_datasetIndex];
+        const {_datasetIndex, _index} = activeElement;
+        const {domains} = this.chart.data.datasets[_datasetIndex];
         if (domains) {
             this.props.onGraphClicked(domains[_index]);
         }
@@ -547,7 +546,7 @@ export class GanttRenderer extends Component {
      * @param {Object} legendItem
      */
     onLegendClick(ev, legendItem) {
-        this.removeTooltips();
+        // this.removeTooltips();
         // Default 'onClick' fallback. See web/static/lib/Chart/Chart.js#15138
         const index = legendItem.datasetIndex;
         const meta = this.chart.getDatasetMeta(index);
@@ -570,7 +569,7 @@ export class GanttRenderer extends Component {
          * for the legend already exists, it is already good and does not
          * need to be recreated.
          */
-        const { fullText, text } = legendItem;
+        const {fullText, text} = legendItem;
         if (this.legendTooltip || text === fullText) {
             return;
         }
@@ -582,8 +581,8 @@ export class GanttRenderer extends Component {
         legendTooltip.style.top = `${ev.clientY - viewContentTop}px`;
         legendTooltip.style.maxWidth = getMaxWidth(this.chart.chartArea);
         this.containerRef.el.appendChild(legendTooltip);
-        this.fixTooltipLeftPosition(legendTooltip, ev.clientX);
-        this.legendTooltip = legendTooltip;
+        // this.fixTooltipLeftPosition(legendTooltip, ev.clientX);
+        // this.legendTooltip = legendTooltip;
     }
 
     /**
@@ -592,7 +591,7 @@ export class GanttRenderer extends Component {
      */
     onLegendLeave() {
         this.canvasRef.el.style.cursor = "";
-        this.removeLegendTooltip();
+        // this.removeLegendTooltip();
     }
 
     /**
@@ -601,13 +600,13 @@ export class GanttRenderer extends Component {
      * instantiate the chart.
      */
     prepareOptions() {
-        const { disableLinking, mode } = this.model.metaData;
+        const {disableLinking, mode} = this.model.metaData;
         const options = {
             maintainAspectRatio: false,
-            scales: this.getScaleOptions(),
-            legend: this.getLegendOptions(),
-            tooltips: this.getTooltipOptions(),
-            elements: this.getElementOptions(),
+            // scales: this.getScaleOptions(),
+            // legend: this.getLegendOptions(),
+            // tooltips: this.getTooltipOptions(),
+            // elements: this.getElementOptions(),
         };
         if (!disableLinking && mode !== "line") {
             options.onClick = this.onGraphClicked.bind(this);
@@ -633,7 +632,7 @@ export class GanttRenderer extends Component {
             this.tooltip.remove();
             this.tooltip = null;
         }
-        this.removeLegendTooltip();
+        // this.removeLegendTooltip();
     }
 
     /**
@@ -644,25 +643,25 @@ export class GanttRenderer extends Component {
 
         gantt.config.order_branch = true;
         gantt.config.order_branch_free = true;
+        gantt.config.open_tree_initially = true;
         gantt.config.date_format = "%Y-%m-%d %H:%i";
 
         this.dataProcessor = gantt.createDataProcessor(this.model.config);
-
         const t = this
         gantt.attachEvent("onTaskDblClick", function (id, task) {
-            console.log(id)
+            // console.log(id)
             t.onGraphClicked(Number(id))
             return false;
         });
-        
-        var zoomConfig = {
+
+        let zoomConfig = {
             levels: [
                 {
                     name: "day",
                     scale_height: 27,
                     min_column_width: 80,
                     scales: [
-                        { unit: "day", step: 1, format: "%d %M" }
+                        {unit: "day", step: 1, format: "%d %M"}
                     ]
                 },
                 {
@@ -672,13 +671,13 @@ export class GanttRenderer extends Component {
                     scales: [
                         {
                             unit: "week", step: 1, format: function (date) {
-                                var dateToStr = gantt.date.date_to_str("%d %M");
-                                var endDate = gantt.date.add(date, -6, "day");
-                                var weekNum = gantt.date.date_to_str("%W")(date);
+                                let dateToStr = gantt.date.date_to_str("%d %M");
+                                let endDate = gantt.date.add(date, -6, "day");
+                                let weekNum = gantt.date.date_to_str("%W")(date);
                                 return "#" + weekNum + ", " + dateToStr(date) + " - " + dateToStr(endDate);
                             }
                         },
-                        { unit: "day", step: 1, format: "%j %D" }
+                        {unit: "day", step: 1, format: "%j %D"}
                     ]
                 },
                 {
@@ -686,8 +685,8 @@ export class GanttRenderer extends Component {
                     scale_height: 50,
                     min_column_width: 120,
                     scales: [
-                        { unit: "month", format: "%F, %Y" },
-                        { unit: "week", format: "Week #%W" }
+                        {unit: "month", format: "%F, %Y"},
+                        {unit: "week", format: "Week #%W"}
                     ]
                 },
                 {
@@ -695,11 +694,11 @@ export class GanttRenderer extends Component {
                     height: 50,
                     min_column_width: 90,
                     scales: [
-                        { unit: "month", step: 1, format: "%M" },
+                        {unit: "month", step: 1, format: "%M"},
                         {
                             unit: "quarter", step: 1, format: function (date) {
-                                var dateToStr = gantt.date.date_to_str("%M");
-                                var endDate = gantt.date.add(gantt.date.add(date, 3, "month"), -1, "day");
+                                let dateToStr = gantt.date.date_to_str("%M");
+                                let endDate = gantt.date.add(gantt.date.add(date, 3, "month"), -1, "day");
                                 return dateToStr(date) + " - " + dateToStr(endDate);
                             }
                         }
@@ -710,7 +709,7 @@ export class GanttRenderer extends Component {
                     scale_height: 50,
                     min_column_width: 30,
                     scales: [
-                        { unit: "year", step: 1, format: "%Y" }
+                        {unit: "year", step: 1, format: "%Y"}
                     ]
                 }
             ]
@@ -718,24 +717,84 @@ export class GanttRenderer extends Component {
 
 
         gantt.ext.zoom.init(zoomConfig);
-        gantt.ext.zoom.setLevel("quarter");
+        gantt.ext.zoom.setLevel("week");
 
-        const { data } = this.model;
+        const {data} = this.model;
         gantt.init("gantt_here");
         gantt.clearAll();
         gantt.parse(data);
-
         gantt.config.sort = true; // Enable sorting on each columns
         gantt.sort("start_date", false) // the sorting direction: true - descending, false - ascending
-
         gantt.config.drag_progress = false;
 
         gantt.templates.rightside_text = function (start, end, task) {
             if (task.type == gantt.config.types.milestone) {
                 return task.text;
             }
+            if (task.type == gantt.config.types.task) {
+                let ownerNames = task.user.map(function (ownerId) {
+                    return byId(gantt.serverList('users'), ownerId);
+                });
+                return ownerNames.join(', ');
+            }
             return "";
         };
+        gantt.templates.progress_text = function (start, end, task) {
+            return "<span style='margin-left: 10px;'>" + Math.round(task.progress * 100) + "% </span>";
+        };
+        gantt.config.grid_resize = true;
+        gantt.config.multiselect = true;
+        gantt.config.multiselect_one_level = true;
+        gantt.serverList("users", this.model.combined_id_name);
+
+        function byId(list, id) {
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].id == id)
+                    return list[i].name || "";
+            }
+            return "";
+        }
+
+        if (this.model.metaData.resModel === 'project.task') {
+            const resource = this.model.data.resource
+            gantt.config.grid_width = 450;
+            gantt.config.columns = [
+                {
+                    name: "owner",
+                    label: "Assignees",
+                    width: 200,
+                    align: "center",
+                    resize: true,
+                    template: function (task) {
+                        if (!task.user || !task.user.length) {
+                            if (task.type == gantt.config.types.milestone) {
+                                return "";
+                            } else {
+                                return "Unassigned";
+                            }
+                        }
+
+                        let ownerNames = task.user.map(function (ownerId) {
+                            return byId(gantt.serverList("users"), ownerId);
+                        });
+                        return ownerNames.join(', ');
+                    }
+                },
+                {name: "text", label: "Task name", width: '200', resize: true, align: "left", tree: true},
+                {name: "start_date", label: "Start Date", align: "center", width: 110, resize: true},
+                {name: "duration", align: "center", width: 50, resize: true},
+                {name: "add", width: 30,}
+            ];
+
+        }
+        if (this.model.metaData.resModel === 'project.project') {
+            gantt.config.columns = [
+                {name: "text", label: "Project", width: '170', resize: true, align: "center"},
+                {name: "start_date", label: "Start Date", align: "center", width: 110, resize: true},
+                {name: "duration", align: "center", width: 50, resize: true},
+                {name: "add", width: 30,}
+            ];
+        }
     }
 }
 

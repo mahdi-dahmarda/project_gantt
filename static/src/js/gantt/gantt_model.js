@@ -1,13 +1,13 @@
 /** @odoo-module **/
 
-import { sortBy } from "@web/core/utils/arrays";
-import { KeepLast, Race } from "@web/core/utils/concurrency";
-import { rankInterval } from "@web/search/utils/dates";
-import { getGroupBy } from "@web/search/utils/group_by";
-import { GROUPABLE_TYPES } from "@web/search/utils/misc";
-import { Model } from "@web/views/model";
-import { computeReportMeasures, processMeasure } from "@web/views/utils";
-import { useEffect } from "@odoo/owl";
+import {sortBy} from "@web/core/utils/arrays";
+import {KeepLast, Race} from "@web/core/utils/concurrency";
+import {rankInterval} from "@web/search/utils/dates";
+import {getGroupBy} from "@web/search/utils/group_by";
+import {GROUPABLE_TYPES} from "@web/search/utils/misc";
+import {Model} from "@web/views/model";
+import {computeReportMeasures, processMeasure} from "@web/views/utils";
+import {useEffect} from "@odoo/owl";
 
 export const SEP = " / ";
 
@@ -100,6 +100,7 @@ export class GanttModel extends Model {
         this.searchParams = null;
         this.config = this._getDataProcessorConfiguration();
         this.now = new Date();
+        this.combined_id_name = null;
     }
 
     //--------------------------------------------------------------------------
@@ -149,9 +150,11 @@ export class GanttModel extends Model {
     get scale() {
         return this.metaData.scale;
     }
+
     get scales() {
         return this.metaData.scales;
     }
+
     //--------------------------------------------------------------------------
     // Protected
     //--------------------------------------------------------------------------
@@ -172,25 +175,25 @@ export class GanttModel extends Model {
                 update: function (data, id) {
                     _t.updateTask(id, data)
                 },
-                delete: function (id) { }
+                delete: function (data) {
+                }
             },
             link: {
                 create: function (data) {
                     if (data.type === '0') {
                         _t.createLink(data)
-
                     }
                 },
-                update: function (data, id) { },
-                delete: function (data) {
-                    _t.deleteLink(data)
+                update: function (data, id) {
+                },
+                delete: function (id) {
+                    _t.deleteLink(id)
                 }
             }
         }
     }
 
     async createTask(data) {
-
         const _task = {
             name: data.text,
             date_start: data.start_date,
@@ -199,7 +202,9 @@ export class GanttModel extends Model {
             project_id: this.metaData.context.active_id,
         }
         await this.orm.create(this.metaData.resModel, [_task]);
+        this.updateMetaData(this.metaData)
     }
+
     async updateTask(id, data) {
         const _task = {
             name: data.text,
@@ -213,15 +218,18 @@ export class GanttModel extends Model {
     async createLink(link) {
         const args = [
             [Number(link.target)],
-            { "depend_on_ids": [[6, false, [Number(link.source)]]] }
+            {"depend_on_ids": [[6, false, [Number(link.source)]]]}
         ]
         this.orm.call(this.metaData.resModel, 'write', args)
     }
 
-    async deleteLink(data,id) {
-               // this.orm.call(this.metaData.resModel, 'unlink', [this.milestone.id]);
+    async deleteLink(id) {
+        console.log("this.metaData.resModel", this.metaData.resModel)
+        console.log("link id deleted", id)
+        const task_id = id;
+        // await this.orm.call('project.task.dependencies', 'unlink', [task_id]);
+        await this.orm.unlink('task.dependencies.rel', [task_id]);
     }
-
 
 
     /**
@@ -230,14 +238,14 @@ export class GanttModel extends Model {
      * @returns {Object}
      */
     _buildMetaData(params) {
-        const { comparison, domain, context, groupBy } = this.searchParams;
+        const {comparison, domain, context, groupBy} = this.searchParams;
 
-        const metaData = Object.assign({}, this.metaData, { context });
+        const metaData = Object.assign({}, this.metaData, {context});
         if (comparison) {
             metaData.domains = comparison.domains;
             metaData.comparisonField = comparison.fieldName;
         } else {
-            metaData.domains = [{ arrayRepr: domain, description: null }];
+            metaData.domains = [{arrayRepr: domain, description: null}];
         }
         metaData.measure = context.graph_measure || metaData.measure;
         metaData.mode = context.graph_mode || metaData.mode;
@@ -278,8 +286,8 @@ export class GanttModel extends Model {
      * @returns {string}
      */
     _getDatasetLabel(dataPoint) {
-        const { measure, measures, domains, mode } = this.metaData;
-        const { labels, originIndex } = dataPoint;
+        const {measure, measures, domains, mode} = this.metaData;
+        const {labels, originIndex} = dataPoint;
         if (mode === "pie") {
             return domains[originIndex].description || "";
         }
@@ -299,9 +307,9 @@ export class GanttModel extends Model {
      * @returns {DateClasses}
      */
     _getDateClasses(dataPoints) {
-        const { domains } = this.metaData;
+        const {domains} = this.metaData;
         const dateSets = domains.map(() => new Set());
-        for (const { labels, originIndex } of dataPoints) {
+        for (const {labels, originIndex} of dataPoints) {
             const date = labels[0];
             dateSets[originIndex].add(date);
         }
@@ -315,7 +323,7 @@ export class GanttModel extends Model {
      * @returns {Object[]}
      */
     _getProcessedDataPoints() {
-        const { domains, groupBy, mode, order } = this.metaData;
+        const {domains, groupBy, mode, order} = this.metaData;
 
         let processedDataPoints = [];
         // if (mode === "line") {
@@ -353,7 +361,7 @@ export class GanttModel extends Model {
      * @returns {boolean}
      */
     _isValidData(dataPoints) {
-        const { mode } = this.metaData;
+        const {mode} = this.metaData;
         let somePositive = false;
         if (mode === "pie") {
             for (const dataPt of dataPoints) {
@@ -377,11 +385,11 @@ export class GanttModel extends Model {
      */
     async _loadData(metaData) {
 
-        const { measure, domains, fields, groupBy, resModel } = metaData;
+        const {measure, domains, fields, groupBy, resModel} = metaData;
 
         const measures = ["__count"];
         if (measure !== "__count") {
-            let { group_operator, type } = fields[measure];
+            let {group_operator, type} = fields[measure];
             if (type === "many2one") {
                 group_operator = "count_distinct";
             }
@@ -395,10 +403,9 @@ export class GanttModel extends Model {
 
         const proms = [];
         const milestones = [];
-
+        const user_ids = []
         const numbering = {}; // used to avoid ambiguity with many2one with values with same labels:
         // for instance [1, "ABC"] [3, "ABC"] should be distinguished.
-
 
         let columns = [];
         switch (resModel) {
@@ -406,7 +413,7 @@ export class GanttModel extends Model {
                 columns = ['id', 'name', 'date_start', 'date'];
                 break;
             case "project.task":
-                columns = ['id', 'name', 'date_start','date_assign','create_date','date_end', 'planned_hours', 'subtask_planned_hours', 'subtask_effective_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids'];
+                columns = ['id', 'name', 'date_start', 'date_assign', 'create_date', 'date_end', 'planned_hours', 'subtask_planned_hours', 'subtask_effective_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids', 'user_ids'];
                 break;
             default:
                 break;
@@ -415,14 +422,51 @@ export class GanttModel extends Model {
         domains.forEach((domain, originIndex) => {
             proms.push(this.orm
                 .searchRead(resModel, domain.arrayRepr, columns, {})
-                .then((data) => { return data; }));
-            console.log("proms",proms)
-            if(resModel === 'project.task'){
-                 milestones.push(this.orm
-                .searchRead("project.milestone", [["project_id", "=", domain.arrayRepr[0][2]]], ['id', 'project_id', 'name', 'deadline', 'reached_date'], {})
-                .then((milestoneData) => { return milestoneData; }));
+                .then((data) => {
+                    return data;
+
+                }));
+
+            if (resModel === 'project.task') {
+                milestones.push(this.orm
+                    .searchRead("project.milestone", [["project_id", "=", domain.arrayRepr[0][2]]], ['id', 'project_id', 'name', 'deadline', 'reached_date'], {})
+                    .then((milestoneData) => {
+                        return milestoneData;
+                    }));
+            }
+
+            if (resModel === 'project.task') {
+                user_ids.push(this.orm
+                    .searchRead("project.task", [["project_id", "=", domain.arrayRepr[0][2]]], ['user_ids'], {})
+                    .then((data) => {
+                        return data;
+                    }));
             }
         });
+
+        const user_ids_promise = await Promise.all(user_ids);
+        const user_ids_flat = user_ids_promise.flat();
+        const user_ids_fields = []
+        user_ids_flat.forEach((user) => {
+            user_ids_fields.push(user.user_ids)
+        })
+        const removed_user_ids_duplicate = [...new Set(user_ids_fields.flat())];
+        const user_ids_partner_id = [];
+        user_ids_partner_id.push(this.orm.searchRead("res.users", [["id", "=", removed_user_ids_duplicate]], ['id', 'partner_id'], {})
+            .then((data) => {
+                return data;
+            }));
+        const user_ids_partner_id_promise = await Promise.all(user_ids_partner_id)
+        const user_ids_partner_id_flat = user_ids_partner_id_promise.flat();
+        const user_id_partner_id = [];
+        user_ids_partner_id_flat.forEach((id) => {
+            const id_name = {
+                id: id.id,
+                name: id.partner_id[1]
+            }
+            user_id_partner_id.push(id_name)
+        })
+        this.combined_id_name = user_id_partner_id;
 
         const All_data = await Promise.all(proms);
         const milestoneData = await Promise.all(milestones);
@@ -440,7 +484,7 @@ export class GanttModel extends Model {
      * @param {Object} metaData
      */
     _normalize(metaData) {
-        const { fields } = metaData;
+        const {fields} = metaData;
         const groupBy = [];
         for (const gb of metaData.groupBy) {
             let ngb = gb;
@@ -452,8 +496,8 @@ export class GanttModel extends Model {
 
         const processedGroupBy = [];
         for (const gb of groupBy) {
-            const { fieldName, interval } = gb;
-            const { sortable, type, store } = fields[fieldName];
+            const {fieldName, interval} = gb;
+            const {sortable, type, store} = fields[fieldName];
             if (
                 // many2many is groupable precisely when it is stored (cf. groupable in odoo/fields.py)
                 (type === "many2many" ? !store : !sortable) ||
@@ -480,12 +524,13 @@ export class GanttModel extends Model {
     /**
      * @protected
      */
+
+
     async _prepareData() {
         const data = []
         const links = []
 
         this.data.forEach(task => {
-
             switch (this.metaData.resModel) {
 
                 case "project.project":
@@ -496,7 +541,8 @@ export class GanttModel extends Model {
                         end_date: task.date,
                         // duration:5,
                         parent: 0,
-                        progress: 0.5
+                        progress: 0,
+                        // type: "project"
                     }
 
                     data.push(_ta)
@@ -509,36 +555,33 @@ export class GanttModel extends Model {
                         end_date: task.date_deadline,
                         parent: task.parent_id[0],
                         progress: task.progress / 100,
+                        type: "task",
+                        user: task.user_ids,
+                        open: true,
                     }
                     if (task.child_ids.length > 0) {
                         _task.type = 'project';
                         _task.progress = task.subtask_effective_hours / task.subtask_planned_hours;
                     }
-
-
-                    if(task.date_start === false){
-                        if(task.date_assign){
+                    if (task.date_start === false) {
+                        if (task.date_assign) {
                             _task.start_date = task.date_assign;
-                        }
-                        else { _task.start_date = task.create_date;
+                        } else {
+                            _task.start_date = task.create_date;
                         }
                     }
-
-                    if(task.date_deadline === false){
-                        if(task.date_end){
+                    if (task.date_deadline === false) {
+                        if (task.date_end) {
                             _task.end_date = task.date_end;
-                        }
-                        else {
-                                _task.end_date = this.now;
+                        } else {
+                            _task.end_date = this.now;
                         }
                     }
                     data.push(_task)
-
                     if (task.depend_on_ids.length > 0) {
-                        console.log(task)
                         task.depend_on_ids.map(depend_id => {
                             const _link = {
-                                id: generateKey(10),
+                                id: task.id,
                                 source: depend_id,
                                 target: task.id,
                                 type: '0'
@@ -553,6 +596,7 @@ export class GanttModel extends Model {
             }
 
         })
+
         if (this.milestones) {
             this.milestones.forEach(milestone => {
                 const _miles = {
@@ -566,7 +610,7 @@ export class GanttModel extends Model {
             })
         }
         this.data = null
-        this.data = { data, links }
+        this.data = {data, links}
 
     }
 
