@@ -224,11 +224,11 @@ export class GanttModel extends Model {
     }
 
     async deleteLink(id) {
-        console.log("this.metaData.resModel", this.metaData.resModel)
-        console.log("link id deleted", id)
-        const task_id = id;
-        // await this.orm.call('project.task.dependencies', 'unlink', [task_id]);
-        await this.orm.unlink('task.dependencies.rel', [task_id]);
+        const args = [
+            [Number(id)],
+            {"depend_on_ids": [[6, false, []]]}
+        ]
+        this.orm.call(this.metaData.resModel, 'write', args)
     }
 
 
