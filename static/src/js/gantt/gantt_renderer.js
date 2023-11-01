@@ -648,12 +648,13 @@ export class GanttRenderer extends Component {
 
         this.dataProcessor = gantt.createDataProcessor(this.model.config);
         const t = this
-        gantt.attachEvent("onTaskDblClick", function (id, task) {
-            // console.log(id)
-            t.onGraphClicked(Number(id))
+        gantt.attachEvent("onTaskDblClick", function (id, e) {
+            var task = gantt.getTask(id);
+            if(task.type !==  "milestone"){
+                 t.onGraphClicked(Number(id))
             return false;
+            }
         });
-
         let zoomConfig = {
             levels: [
                 {

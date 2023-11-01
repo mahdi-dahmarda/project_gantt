@@ -137,7 +137,8 @@ export class GanttModel extends Model {
             const metaData = this._buildMetaData(params);
             await this._fetchData(metaData);
             this.useSampleModel = false;
-        } else {
+        }
+        else {
             await this.race.getCurrentProm();
             const metaData = this._buildMetaData(params);
             await this._fetchData(metaData);
@@ -145,6 +146,10 @@ export class GanttModel extends Model {
             this._prepareData();
         }
         this.notify();
+    }
+
+    async updateSpecificData(data){
+this.notify();
     }
 
     get scale() {
@@ -194,15 +199,15 @@ export class GanttModel extends Model {
     }
 
     async createTask(data) {
-        const _task = {
+        let _task = {
             name: data.text,
             date_start: data.start_date,
             date_deadline: data.end_date,
             parent_id: data.parent,
             project_id: this.metaData.context.active_id,
         }
-        await this.orm.create(this.metaData.resModel, [_task]);
-        this.updateMetaData(this.metaData)
+        await this.orm.create(this.metaData.resModel, [_task])
+        // this.model.updateMetaData(this.metaData);
     }
 
     async updateTask(id, data) {
@@ -220,7 +225,8 @@ export class GanttModel extends Model {
             [Number(link.target)],
             {"depend_on_ids": [[6, false, [Number(link.source)]]]}
         ]
-        this.orm.call(this.metaData.resModel, 'write', args)
+        const linked =await this.orm.call(this.metaData.resModel, 'write', args);
+        console.log(linked)
     }
 
     async deleteLink(id) {
@@ -403,7 +409,7 @@ export class GanttModel extends Model {
 
         const proms = [];
         const milestones = [];
-        const user_ids = []
+        const user_ids = [];
         const numbering = {}; // used to avoid ambiguity with many2one with values with same labels:
         // for instance [1, "ABC"] [3, "ABC"] should be distinguished.
 
@@ -600,16 +606,17 @@ export class GanttModel extends Model {
         if (this.milestones) {
             this.milestones.forEach(milestone => {
                 const _miles = {
-                    id: milestone.id,
+                    id: generateKey(8),
                     text: milestone.name,
                     start_date: milestone.deadline,
                     end_date: milestone.reached_date,
                     type: "milestone",
                 }
-                data.push(_miles)
+                data.push(_miles);
             })
         }
         this.data = null
+
         this.data = {data, links}
 
     }
