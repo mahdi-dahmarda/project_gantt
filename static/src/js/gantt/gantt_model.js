@@ -100,7 +100,7 @@ export class GanttModel extends Model {
         this.searchParams = null;
         this.config = this._getDataProcessorConfiguration();
         this.now = new Date();
-        this.combined_id_name = null;
+        this.all_user_names = null;
     }
 
     //--------------------------------------------------------------------------
@@ -148,10 +148,6 @@ export class GanttModel extends Model {
         this.notify();
     }
 
-    async updateSpecificData(data){
-this.notify();
-    }
-
     get scale() {
         return this.metaData.scale;
     }
@@ -180,7 +176,8 @@ this.notify();
                 update: function (data, id) {
                     _t.updateTask(id, data)
                 },
-                delete: function (data) {
+                delete: function (id) {
+                    _t.deleteTask(id)
                 }
             },
             link: {
@@ -207,10 +204,11 @@ this.notify();
             project_id: this.metaData.context.active_id,
         }
         await this.orm.create(this.metaData.resModel, [_task])
-        // this.model.updateMetaData(this.metaData);
+        this.model.updateMetaData(this.metaData);
     }
 
     async updateTask(id, data) {
+        // console.log("update task",data)
         const _task = {
             name: data.text,
             date_start: data.start_date,
@@ -220,13 +218,16 @@ this.notify();
         await this.orm.write(this.metaData.resModel, [Number(id)], _task);
     }
 
+    async deleteTask(id){
+        await this.orm.unlink(this.metaData.resModel, [id]);
+    }
+
     async createLink(link) {
         const args = [
             [Number(link.target)],
             {"depend_on_ids": [[6, false, [Number(link.source)]]]}
         ]
-        const linked =await this.orm.call(this.metaData.resModel, 'write', args);
-        console.log(linked)
+        await this.orm.call(this.metaData.resModel, 'write', args);
     }
 
     async deleteLink(id) {
@@ -409,17 +410,17 @@ this.notify();
 
         const proms = [];
         const milestones = [];
-        const user_ids = [];
+        const user_id = [];
         const numbering = {}; // used to avoid ambiguity with many2one with values with same labels:
         // for instance [1, "ABC"] [3, "ABC"] should be distinguished.
 
         let columns = [];
         switch (resModel) {
             case "project.project":
-                columns = ['id', 'name', 'date_start', 'date'];
+                columns = ['id', 'name', 'date_start', 'date','tasks','exact_start_date','exact_end_date','project_progress'];
                 break;
             case "project.task":
-                columns = ['id', 'name', 'date_start', 'date_assign', 'create_date', 'date_end', 'planned_hours', 'subtask_planned_hours', 'subtask_effective_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids', 'user_ids'];
+                columns = ['id', 'name', 'date_start', 'date_assign', 'create_date', 'date_end', 'planned_hours', 'subtask_planned_hours', 'subtask_effective_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids', 'user_ids','portal_user_names',];
                 break;
             default:
                 break;
@@ -440,39 +441,23 @@ this.notify();
                         return milestoneData;
                     }));
             }
-
-            if (resModel === 'project.task') {
-                user_ids.push(this.orm
-                    .searchRead("project.task", [["project_id", "=", domain.arrayRepr[0][2]]], ['user_ids'], {})
-                    .then((data) => {
-                        return data;
-                    }));
-            }
         });
 
-        const user_ids_promise = await Promise.all(user_ids);
-        const user_ids_flat = user_ids_promise.flat();
-        const user_ids_fields = []
-        user_ids_flat.forEach((user) => {
-            user_ids_fields.push(user.user_ids)
-        })
-        const removed_user_ids_duplicate = [...new Set(user_ids_fields.flat())];
-        const user_ids_partner_id = [];
-        user_ids_partner_id.push(this.orm.searchRead("res.users", [["id", "=", removed_user_ids_duplicate]], ['id', 'partner_id'], {})
+        user_id.push(this.orm.searchRead("res.users", [], ['partner_id'], {})
             .then((data) => {
                 return data;
             }));
-        const user_ids_partner_id_promise = await Promise.all(user_ids_partner_id)
-        const user_ids_partner_id_flat = user_ids_partner_id_promise.flat();
-        const user_id_partner_id = [];
-        user_ids_partner_id_flat.forEach((id) => {
-            const id_name = {
-                id: id.id,
-                name: id.partner_id[1]
+        const user_ids = await Promise.all(user_id);
+        const user_ids_flat = user_ids.flat();
+        const user = [];
+        user_ids_flat.forEach((user_data) => {
+            const users = {
+                key: user_data.id,
+                label: user_data.partner_id[1]
             }
-            user_id_partner_id.push(id_name)
-        })
-        this.combined_id_name = user_id_partner_id;
+            user.push(users);
+        });
+        this.all_user_names = user;
 
         const All_data = await Promise.all(proms);
         const milestoneData = await Promise.all(milestones);
@@ -531,7 +516,6 @@ this.notify();
      * @protected
      */
 
-
     async _prepareData() {
         const data = []
         const links = []
@@ -543,14 +527,17 @@ this.notify();
                     const _ta = {
                         id: task.id,
                         text: task.name,
-                        start_date: task.date_start,
-                        end_date: task.date,
+                        start_date: task.exact_start_date,
+                        end_date: task.exact_end_date,
                         // duration:5,
                         parent: 0,
-                        progress: 0,
+                        progress: task.project_progress / 100,
                         // type: "project"
                     }
-
+                    // console.log( task.name + " " + task.project_progress)
+                    // console.log("tasks",task.name + "  "+ task.tasks)
+                    // console.log("Minimum",task.name + "  " + task.exact_start_date)
+                    // console.log("maximum",task.name + "  " + task.exact_end_date)
                     data.push(_ta)
                     break;
                 case "project.task":
@@ -562,9 +549,10 @@ this.notify();
                         parent: task.parent_id[0],
                         progress: task.progress / 100,
                         type: "task",
-                        user: task.user_ids,
+                        user: task.portal_user_names,
                         open: true,
                     }
+
                     if (task.child_ids.length > 0) {
                         _task.type = 'project';
                         _task.progress = task.subtask_effective_hours / task.subtask_planned_hours;

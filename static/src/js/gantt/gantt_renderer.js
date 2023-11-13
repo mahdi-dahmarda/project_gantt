@@ -648,13 +648,30 @@ export class GanttRenderer extends Component {
 
         this.dataProcessor = gantt.createDataProcessor(this.model.config);
         const t = this
-        gantt.attachEvent("onTaskDblClick", function (id, e) {
-            var task = gantt.getTask(id);
-            if(task.type !==  "milestone"){
-                 t.onGraphClicked(Number(id))
-            return false;
-            }
-        });
+        // gantt.attachEvent("onTaskDblClick", function (id, e) {
+        //     var task = gantt.getTask(id);
+        //     if(task.type !==  "milestone"){
+        //          t.onGraphClicked(Number(id))
+        //     return false;
+        //     }
+        // });
+
+
+        gantt.serverList("users", this.model.all_user_names);
+        if (this.model.metaData.resModel === 'project.task') {
+            gantt.config.lightbox.sections = [
+                {name: "Description", height: 60, map_to: "text", type: "textarea", focus: true},
+                {name: "user", height: 22, map_to: "user", type: "select", options: gantt.serverList("users")},
+                {name: "time", height: 72, map_to: "auto", type: "duration"}
+            ];
+        }
+        if (this.model.metaData.resModel === 'project.project') {
+            gantt.config.lightbox.sections = [
+                {name: "Description", height: 60, map_to: "text", type: "textarea", focus: true, label: "Task Name"},
+                {name: "time", height: 72, map_to: "auto", type: "duration"}
+            ];
+        }
+
         let zoomConfig = {
             levels: [
                 {
@@ -733,10 +750,7 @@ export class GanttRenderer extends Component {
                 return task.text;
             }
             if (task.type == gantt.config.types.task) {
-                let ownerNames = task.user.map(function (ownerId) {
-                    return byId(gantt.serverList('users'), ownerId);
-                });
-                return ownerNames.join(', ');
+                return task.user;
             }
             return "";
         };
@@ -746,48 +760,18 @@ export class GanttRenderer extends Component {
         gantt.config.grid_resize = true;
         gantt.config.multiselect = true;
         gantt.config.multiselect_one_level = true;
-        gantt.serverList("users", this.model.combined_id_name);
-
-        function byId(list, id) {
-            for (var i = 0; i < list.length; i++) {
-                if (list[i].id == id)
-                    return list[i].name || "";
-            }
-            return "";
-        }
 
         if (this.model.metaData.resModel === 'project.task') {
-            const resource = this.model.data.resource
             gantt.config.grid_width = 450;
             gantt.config.columns = [
-                {
-                    name: "owner",
-                    label: "Assignees",
-                    width: 200,
-                    align: "center",
-                    resize: true,
-                    template: function (task) {
-                        if (!task.user || !task.user.length) {
-                            if (task.type == gantt.config.types.milestone) {
-                                return "";
-                            } else {
-                                return "Unassigned";
-                            }
-                        }
-
-                        let ownerNames = task.user.map(function (ownerId) {
-                            return byId(gantt.serverList("users"), ownerId);
-                        });
-                        return ownerNames.join(', ');
-                    }
-                },
-                {name: "text", label: "Task name", width: '200', resize: true, align: "left", tree: true},
+                {name: "user", label: "Assignees", width: '200', resize: true, align: "left"},
+                {name: "text", label: "Task Name", width: '300', resize: true, align: "left", tree: true},
                 {name: "start_date", label: "Start Date", align: "center", width: 110, resize: true},
                 {name: "duration", align: "center", width: 50, resize: true},
                 {name: "add", width: 30,}
             ];
-
         }
+
         if (this.model.metaData.resModel === 'project.project') {
             gantt.config.columns = [
                 {name: "text", label: "Project", width: '170', resize: true, align: "center"},
