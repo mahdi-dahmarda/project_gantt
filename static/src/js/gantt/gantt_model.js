@@ -208,7 +208,6 @@ export class GanttModel extends Model {
     }
 
     async updateTask(id, data) {
-        // console.log("update task",data)
         const _task = {
             name: data.text,
             date_start: data.start_date,
@@ -534,10 +533,7 @@ export class GanttModel extends Model {
                         progress: task.project_progress / 100,
                         // type: "project"
                     }
-                    // console.log( task.name + " " + task.project_progress)
-                    // console.log("tasks",task.name + "  "+ task.tasks)
-                    // console.log("Minimum",task.name + "  " + task.exact_start_date)
-                    // console.log("maximum",task.name + "  " + task.exact_end_date)
+
                     data.push(_ta)
                     break;
                 case "project.task":

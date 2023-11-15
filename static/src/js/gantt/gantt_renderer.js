@@ -655,22 +655,55 @@ export class GanttRenderer extends Component {
         //     return false;
         //     }
         // });
-
-
         gantt.serverList("users", this.model.all_user_names);
-        if (this.model.metaData.resModel === 'project.task') {
-            gantt.config.lightbox.sections = [
-                {name: "Description", height: 60, map_to: "text", type: "textarea", focus: true},
-                {name: "user", height: 22, map_to: "user", type: "select", options: gantt.serverList("users")},
-                {name: "time", height: 72, map_to: "auto", type: "duration"}
-            ];
-        }
-        if (this.model.metaData.resModel === 'project.project') {
-            gantt.config.lightbox.sections = [
-                {name: "Description", height: 60, map_to: "text", type: "textarea", focus: true, label: "Task Name"},
-                {name: "time", height: 72, map_to: "auto", type: "duration"}
-            ];
-        }
+        var task_sections = [
+            {name: "description", height: 60, map_to: "text", type: "textarea", focus: true},
+            {name: "user", height: 22, map_to: "user", type: "multiselect",},
+            {name: "time", height: 72, map_to: "auto", type: "duration"}
+        ];
+        var task_project_sections = [
+            {name: "description", height: 60, map_to: "text", type: "textarea", focus: true},
+            {name: "user", height: 22, map_to: "user", type: "multiselect",},
+            {name: "time", height: 72, map_to: "auto", type: "duration", readonly: true}
+        ];
+        var milestone_sections = [
+            {name: "description", height: 60, map_to: "text", type: "textarea"},
+            {name: "time", height: 72, map_to: "auto", type: "duration", single_date: true}
+        ];
+        var project_sectionss = [
+            {name: "description", height: 60, map_to: "text", type: "textarea"},
+            {name: "time", height: 72, map_to: "auto", type: "duration", readonly: true}
+        ];
+
+        var model_type = this.model.metaData.resModel
+        gantt.attachEvent("onBeforeLightbox", function (id) {
+            var task = gantt.getTask(id);
+            if (task.type === 'task') {
+                gantt.locale.labels.section_description = 'Task Name'
+                gantt.config.lightbox.sections = task_sections
+            } else if (task.type === 'project') {
+                gantt.locale.labels.section_description = 'Task Name'
+                gantt.config.lightbox.project_sections = task_project_sections
+                console.log(gantt.config.lightbox)
+            } else if (task.type === 'milestone') {
+                gantt.locale.labels.section_description = 'Milestone Name'
+                gantt.config.lightbox.milestone_sections = milestone_sections;
+            } else if (model_type === 'project.project') {
+                gantt.locale.labels.section_description = 'Project Name'
+                gantt.config.lightbox.sections = project_sectionss;
+            }
+            return true;
+        });
+
+        gantt.attachEvent("onBeforeTaskDrag", function (id, mode, e) {
+            if (mode === "resize" || mode === "move") {
+                if (model_type === 'project.project') {
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+        });
 
         let zoomConfig = {
             levels: [
@@ -770,9 +803,7 @@ export class GanttRenderer extends Component {
                 {name: "duration", align: "center", width: 50, resize: true},
                 {name: "add", width: 30,}
             ];
-        }
-
-        if (this.model.metaData.resModel === 'project.project') {
+        } else if (this.model.metaData.resModel === 'project.project') {
             gantt.config.columns = [
                 {name: "text", label: "Project", width: '170', resize: true, align: "center"},
                 {name: "start_date", label: "Start Date", align: "center", width: 110, resize: true},
