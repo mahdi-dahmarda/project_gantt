@@ -208,13 +208,20 @@ export class GanttModel extends Model {
     }
 
     async updateTask(id, data) {
-        const _task = {
+        var task = gantt.getTask(id)
+        if(task.model === 'project.task'){
+            const _task = {
             name: data.text,
             date_start: data.start_date,
             date_deadline: data.end_date,
             parent_id: data.parent,
         }
         await this.orm.write(this.metaData.resModel, [Number(id)], _task);
+        }
+        else if (task.model === 'project.project'){
+            
+        }
+
     }
 
     async deleteTask(id){
@@ -531,6 +538,7 @@ export class GanttModel extends Model {
                         // duration:5,
                         parent: 0,
                         progress: task.project_progress / 100,
+                        model:"project.project"
                         // type: "project"
                     }
 
@@ -547,6 +555,7 @@ export class GanttModel extends Model {
                         type: "task",
                         user: task.portal_user_names,
                         open: true,
+                        model:"project.task"
                     }
 
                     if (task.child_ids.length > 0) {

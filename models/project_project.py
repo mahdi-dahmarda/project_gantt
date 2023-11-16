@@ -4,8 +4,8 @@ class ProjectProject(models.Model):
     _inherit = "project.project"
 
     # Add computed fields for start and end dates
-    exact_start_date = fields.Date(string='EStart Date', compute='_compute_exact_start_date')
-    exact_end_date = fields.Date(string='EEnd Date', compute='_compute_exact_end_date')
+    exact_start_date = fields.Date(string='EStart Date', compute='_compute_exact_start_date', default=fields.Date.today())
+    exact_end_date = fields.Date(string='EEnd Date', compute='_compute_exact_end_date', default=fields.Date.today())
     project_progress = fields.Float(string='project progress', compute='_compute_project_progress')
 
     @api.depends('tasks.date_start')

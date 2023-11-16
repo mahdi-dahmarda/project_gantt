@@ -675,7 +675,6 @@ export class GanttRenderer extends Component {
             {name: "time", height: 72, map_to: "auto", type: "duration", readonly: true}
         ];
 
-        var model_type = this.model.metaData.resModel
         gantt.attachEvent("onBeforeLightbox", function (id) {
             var task = gantt.getTask(id);
             if (task.type === 'task') {
@@ -684,11 +683,10 @@ export class GanttRenderer extends Component {
             } else if (task.type === 'project') {
                 gantt.locale.labels.section_description = 'Task Name'
                 gantt.config.lightbox.project_sections = task_project_sections
-                console.log(gantt.config.lightbox)
             } else if (task.type === 'milestone') {
                 gantt.locale.labels.section_description = 'Milestone Name'
                 gantt.config.lightbox.milestone_sections = milestone_sections;
-            } else if (model_type === 'project.project') {
+            } else if (task.model === 'project.project') {
                 gantt.locale.labels.section_description = 'Project Name'
                 gantt.config.lightbox.sections = project_sectionss;
             }
@@ -696,14 +694,36 @@ export class GanttRenderer extends Component {
         });
 
         gantt.attachEvent("onBeforeTaskDrag", function (id, mode, e) {
+            var task = gantt.getTask(id)
             if (mode === "resize" || mode === "move") {
-                if (model_type === 'project.project') {
+                if (task.model === 'project.project') {
                     return false;
                 } else {
                     return true;
                 }
             }
         });
+
+        // gantt.plugins({
+        //     undo: true
+        // });
+        // var stack = gantt.getUndoStack();
+        // console.log("gantt.getUndoStack()", stack)
+        // console.log(" undo",gantt.ext.undo)
+        // gantt.attachEvent("onAfterTaskDrag", function (id, mode, e) {
+        //     gantt.confirm({
+        //         text: "Do you want to change task position?",
+        //         ok: "Yes",
+        //         cancel: "No",
+        //         callback: function (result) {
+        //             console.log(result)
+                    // if (!result) {
+                    //     console.log(gantt.ext.undo.undo())
+                    // }
+                // }
+            // });
+            // return true;
+        // });
 
         let zoomConfig = {
             levels: [
@@ -795,11 +815,11 @@ export class GanttRenderer extends Component {
         gantt.config.multiselect_one_level = true;
 
         if (this.model.metaData.resModel === 'project.task') {
-            gantt.config.grid_width = 450;
+            gantt.config.grid_width = 460;
             gantt.config.columns = [
                 {name: "user", label: "Assignees", width: '200', resize: true, align: "left"},
                 {name: "text", label: "Task Name", width: '300', resize: true, align: "left", tree: true},
-                {name: "start_date", label: "Start Date", align: "center", width: 110, resize: true},
+                {name: "start_date", label: "Start Date", align: "center", width: 130, resize: true},
                 {name: "duration", align: "center", width: 50, resize: true},
                 {name: "add", width: 30,}
             ];
