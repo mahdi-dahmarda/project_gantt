@@ -137,8 +137,7 @@ export class GanttModel extends Model {
             const metaData = this._buildMetaData(params);
             await this._fetchData(metaData);
             this.useSampleModel = false;
-        }
-        else {
+        } else {
             await this.race.getCurrentProm();
             const metaData = this._buildMetaData(params);
             await this._fetchData(metaData);
@@ -155,6 +154,7 @@ export class GanttModel extends Model {
     get scales() {
         return this.metaData.scales;
     }
+
 
     //--------------------------------------------------------------------------
     // Protected
@@ -196,52 +196,78 @@ export class GanttModel extends Model {
     }
 
     async createTask(data) {
-        let _task = {
-            name: data.text,
-            date_start: data.start_date,
-            date_deadline: data.end_date,
-            parent_id: data.parent,
-            project_id: this.metaData.context.active_id,
+        if (this.metaData.resModel === 'project.task') {
+            let _task = {
+                name: data.text,
+                date_start: data.start_date,
+                date_deadline: data.end_date,
+                parent_id: data.parent,
+                project_id: this.metaData.context.active_id,
+            }
+            await this.orm.create(this.metaData.resModel, [_task])
+        } else if (this.metaData.resModel === 'project.project') {
+            // console.log(data)
         }
-        await this.orm.create(this.metaData.resModel, [_task])
-        this.model.updateMetaData(this.metaData);
+
     }
 
     async updateTask(id, data) {
         var task = gantt.getTask(id)
-        if(task.model === 'project.task'){
+        if (task.model === 'project.task') {
             const _task = {
-            name: data.text,
-            date_start: data.start_date,
-            date_deadline: data.end_date,
-            parent_id: data.parent,
-        }
-        await this.orm.write(this.metaData.resModel, [Number(id)], _task);
-        }
-        else if (task.model === 'project.project'){
-            
-        }
+                name: data.text,
+                date_start: data.start_date,
+                date_deadline: data.end_date,
+                parent_id: data.parent,
+            }
+            await this.orm.write(this.metaData.resModel, [Number(id.substring(3))], _task);
+        } else if (task.type === 'milestone') {
+            const _task = {
+                name: data.text,
+                deadline: data.start_date,
+            }
+            await this.orm.write('project.milestone', [Number(id.substring(3))], _task);
+        } else if (task.model === 'project.project') {
 
+        }
     }
 
-    async deleteTask(id){
-        await this.orm.unlink(this.metaData.resModel, [id]);
+    async deleteTask(id) {
+        if(id.substring(0,3) === 'TSK'){
+            await this.orm.unlink("project.task", [Number(id.substring(3))]);
+        }
+        else if(id.substring(0,3) === 'MLT'){
+            await this.orm.unlink("project.milestone", [Number(id.substring(3))])
+        }
+        else if (id.substring(0,3) === 'PRJ'){
+            await this.orm.unlink("project.project", [Number(id.substring(3))]);
+        }
     }
 
     async createLink(link) {
-        const args = [
-            [Number(link.target)],
-            {"depend_on_ids": [[6, false, [Number(link.source)]]]}
-        ]
-        await this.orm.call(this.metaData.resModel, 'write', args);
+        if (this.metaData.resModel === 'project.task') {
+            const args = [
+                [Number(link.target)],
+                {"depend_on_ids": [[6, false, [Number(link.source)]]]}
+            ]
+            await this.orm.call(this.metaData.resModel, 'write', args);
+        } else if (this.metaData.resModel === 'project.project') {
+
+        }
+
     }
 
     async deleteLink(id) {
-        const args = [
-            [Number(id)],
-            {"depend_on_ids": [[6, false, []]]}
-        ]
-        this.orm.call(this.metaData.resModel, 'write', args)
+        if (this.metaData.resModel === 'project.task') {
+            const args = [
+                [Number(id)],
+                {"depend_on_ids": [[6, false, []]]}
+            ]
+            this.orm.call(this.metaData.resModel, 'write', args)
+        } else if (this.metaData.resModel === 'project.project') {
+
+        }
+
     }
 
 
@@ -423,10 +449,10 @@ export class GanttModel extends Model {
         let columns = [];
         switch (resModel) {
             case "project.project":
-                columns = ['id', 'name', 'date_start', 'date','tasks','exact_start_date','exact_end_date','project_progress'];
+                columns = ['id', 'name', 'date_start', 'date', 'tasks', 'exact_start_date', 'exact_end_date', 'project_progress'];
                 break;
             case "project.task":
-                columns = ['id', 'name', 'date_start', 'date_assign', 'create_date', 'date_end', 'planned_hours', 'subtask_planned_hours', 'subtask_effective_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids', 'user_ids','portal_user_names',];
+                columns = ['id', 'name', 'date_start', 'date_assign', 'create_date', 'date_end', 'planned_hours', 'subtask_planned_hours', 'subtask_effective_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids', 'user_ids', 'portal_user_names',];
                 break;
             default:
                 break;
@@ -531,14 +557,14 @@ export class GanttModel extends Model {
 
                 case "project.project":
                     const _ta = {
-                        id: task.id,
+                        id: 'PRJ' + task.id,
                         text: task.name,
                         start_date: task.exact_start_date,
                         end_date: task.exact_end_date,
                         // duration:5,
                         parent: 0,
                         progress: task.project_progress / 100,
-                        model:"project.project"
+                        model: "project.project"
                         // type: "project"
                     }
 
@@ -546,7 +572,7 @@ export class GanttModel extends Model {
                     break;
                 case "project.task":
                     const _task = {
-                        id: task.id,
+                        id: 'TSK' + task.id,
                         text: task.name,
                         start_date: task.date_start,
                         end_date: task.date_deadline,
@@ -555,7 +581,7 @@ export class GanttModel extends Model {
                         type: "task",
                         user: task.portal_user_names,
                         open: true,
-                        model:"project.task"
+                        model: "project.task"
                     }
 
                     if (task.child_ids.length > 0) {
@@ -599,7 +625,7 @@ export class GanttModel extends Model {
         if (this.milestones) {
             this.milestones.forEach(milestone => {
                 const _miles = {
-                    id: generateKey(8),
+                    id: 'MLT' + milestone.id,
                     text: milestone.name,
                     start_date: milestone.deadline,
                     end_date: milestone.reached_date,
