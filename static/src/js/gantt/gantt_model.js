@@ -206,41 +206,43 @@ export class GanttModel extends Model {
             }
             await this.orm.create(this.metaData.resModel, [_task])
         } else if (this.metaData.resModel === 'project.project') {
-            // console.log(data)
+            let _task = {
+                name: data.text,
+            }
+            await this.orm.create(this.metaData.resModel, [_task])
         }
 
     }
 
     async updateTask(id, data) {
-        var task = gantt.getTask(id)
-        if (task.model === 'project.task') {
+        if (data.model === 'project.task') {
             const _task = {
                 name: data.text,
                 date_start: data.start_date,
                 date_deadline: data.end_date,
                 parent_id: data.parent,
             }
-            await this.orm.write(this.metaData.resModel, [Number(id.substring(3))], _task);
-        } else if (task.type === 'milestone') {
+            await this.orm.write("project.task", [Number(id)], _task);
+        } else if (data.type === 'milestone') {
             const _task = {
                 name: data.text,
                 deadline: data.start_date,
             }
             await this.orm.write('project.milestone', [Number(id.substring(3))], _task);
-        } else if (task.model === 'project.project') {
-
+        } else if (data.model === 'project.project') {
+            const _task = {
+                name: data.text,
+            }
+            await this.orm.write('project.project', [Number(id)], _task);
         }
     }
 
     async deleteTask(id) {
-        if(id.substring(0,3) === 'TSK'){
-            await this.orm.unlink("project.task", [Number(id.substring(3))]);
-        }
-        else if(id.substring(0,3) === 'MLT'){
-            await this.orm.unlink("project.milestone", [Number(id.substring(3))])
-        }
-        else if (id.substring(0,3) === 'PRJ'){
-            await this.orm.unlink("project.project", [Number(id.substring(3))]);
+        let id_string = id.toString();
+        if (!id_string.includes('MLT')) {
+            await this.orm.unlink(this.metaData.resModel, [Number(id)]);
+        } else {
+            await this.orm.unlink("project.milestone", [Number(id.substring(3))]);
         }
     }
 
@@ -557,7 +559,7 @@ export class GanttModel extends Model {
 
                 case "project.project":
                     const _ta = {
-                        id: 'PRJ' + task.id,
+                        id: task.id,
                         text: task.name,
                         start_date: task.exact_start_date,
                         end_date: task.exact_end_date,
@@ -572,7 +574,7 @@ export class GanttModel extends Model {
                     break;
                 case "project.task":
                     const _task = {
-                        id: 'TSK' + task.id,
+                        id: task.id,
                         text: task.name,
                         start_date: task.date_start,
                         end_date: task.date_deadline,

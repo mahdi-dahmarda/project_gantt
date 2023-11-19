@@ -655,6 +655,13 @@ export class GanttRenderer extends Component {
         //     return false;
         //     }
         // });
+
+        gantt.templates.grid_row_class = function (start, end, task) {
+            if (task.model === 'project.project' || task.type === 'milestone') {
+                return "nested_task"
+            }
+            return "";
+        };
         gantt.serverList("users", this.model.all_user_names);
         var task_sections = [
             {name: "description", height: 60, map_to: "text", type: "textarea", focus: true},
@@ -696,11 +703,28 @@ export class GanttRenderer extends Component {
         gantt.attachEvent("onBeforeTaskDrag", function (id, mode, e) {
             var task = gantt.getTask(id)
             if (mode === "resize" || mode === "move") {
-                if (task.model === 'project.project') {
-                    return false;
-                } else {
+                if (task.type === 'task' || task.type === 'milestone') {
                     return true;
+                } else {
+                    return false;
                 }
+            }
+        });
+
+        gantt.attachEvent("onBeforeRowDragEnd", function (id, parent, tindex) {
+            if (id.substring(0, 3) === 'PRJ') {
+                return false;
+            } else {
+                return true;
+            }
+        });
+
+        gantt.attachEvent("onBeforeRowDragEnd", function (id, parent, tindex) {
+            const task = gantt.getTask(id);
+            if (task.model === 'project.project') {
+                return false;
+            } else {
+                return true;
             }
         });
 
@@ -717,12 +741,12 @@ export class GanttRenderer extends Component {
         //         cancel: "No",
         //         callback: function (result) {
         //             console.log(result)
-                    // if (!result) {
-                    //     console.log(gantt.ext.undo.undo())
-                    // }
-                // }
-            // });
-            // return true;
+        // if (!result) {
+        //     console.log(gantt.ext.undo.undo())
+        // }
+        // }
+        // });
+        // return true;
         // });
 
         let zoomConfig = {
