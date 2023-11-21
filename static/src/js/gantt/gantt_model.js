@@ -553,6 +553,7 @@ export class GanttModel extends Model {
     async _prepareData() {
         const data = []
         const links = []
+        const storedOpenedTasks = JSON.parse(localStorage.getItem("opened_tasks"));
 
         this.data.forEach(task => {
             switch (this.metaData.resModel) {
@@ -566,7 +567,7 @@ export class GanttModel extends Model {
                         // duration:5,
                         parent: 0,
                         progress: task.project_progress / 100,
-                        model: "project.project"
+                        model: "project.project",
                         // type: "project"
                     }
 
@@ -582,11 +583,18 @@ export class GanttModel extends Model {
                         progress: task.progress / 100,
                         type: "task",
                         user: task.portal_user_names,
-                        open: true,
-                        model: "project.task"
+                        model: "project.task",
+                        open: false
                     }
 
                     if (task.child_ids.length > 0) {
+                        if (storedOpenedTasks && storedOpenedTasks.length > 0) {
+                            storedOpenedTasks.forEach(taskId => {
+                                if(task.id === Number(taskId)){
+                                    _task.open = true
+                                }
+                            });
+                        }
                         _task.type = 'project';
                         _task.progress = task.subtask_effective_hours / task.subtask_planned_hours;
                     }

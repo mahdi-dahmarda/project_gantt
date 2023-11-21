@@ -643,7 +643,6 @@ export class GanttRenderer extends Component {
 
         gantt.config.order_branch = true;
         gantt.config.order_branch_free = true;
-        gantt.config.open_tree_initially = true;
         gantt.config.date_format = "%Y-%m-%d %H:%i";
 
         this.dataProcessor = gantt.createDataProcessor(this.model.config);
@@ -655,6 +654,23 @@ export class GanttRenderer extends Component {
         //     return false;
         //     }
         // });
+
+        let opened_ids = JSON.parse(localStorage.getItem("opened_tasks")) || [];
+        gantt.attachEvent("onTaskOpened", function (id) {
+            opened_ids.push(id);
+            localStorage.setItem("opened_tasks", JSON.stringify(opened_ids));
+        });
+
+        gantt.attachEvent("onTaskClosed", function (id) {
+             let closed_ids = JSON.parse(localStorage.getItem("opened_tasks")) || [];
+            let index = closed_ids.indexOf(id);
+            if (index > -1) {
+                closed_ids.splice(index, 1);
+                opened_ids.splice(index, 1)
+            }
+            localStorage.setItem("opened_tasks", JSON.stringify(closed_ids))
+        });
+
 
         gantt.templates.grid_row_class = function (start, end, task) {
             if (task.model === 'project.project' || task.type === 'milestone') {
@@ -708,14 +724,6 @@ export class GanttRenderer extends Component {
                 } else {
                     return false;
                 }
-            }
-        });
-
-        gantt.attachEvent("onBeforeRowDragEnd", function (id, parent, tindex) {
-            if (id.substring(0, 3) === 'PRJ') {
-                return false;
-            } else {
-                return true;
             }
         });
 
