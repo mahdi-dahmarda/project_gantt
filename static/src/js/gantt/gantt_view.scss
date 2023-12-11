@@ -24,3 +24,9 @@
 .nested_task .gantt_add{
     display: none !important;
 }
+.gantt_time_selects , .gantt_duration {
+  display: inline-flex !important;
+}
+.search-choice-close{
+  color: black !important;
+}

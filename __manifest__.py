@@ -12,8 +12,12 @@
     'assets': {
         'web.assets_backend': [
             '/project_gantt/static/lib/dhtmlxgantt/dhtmlxgantt.css',
+            '/project_gantt/static/lib/chosenjquery/chosen_min.css',
+            '/project_gantt/static/lib/chosenjquery/chosen-sprite.png',
             '/project_gantt/static/lib/dhtmlxgantt/dhtmlxgantt.js',
+            '/project_gantt/static/lib/chosenjquery/chosen_jquery_min.js',
             '/project_gantt/static/src/js/**/*'
+
         ],
     },
     "application": True,

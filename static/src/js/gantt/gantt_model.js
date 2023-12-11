@@ -204,7 +204,30 @@ export class GanttModel extends Model {
                 parent_id: data.parent,
                 project_id: this.metaData.context.active_id,
             }
-            await this.orm.create(this.metaData.resModel, [_task])
+            let task_id = await this.orm.create(this.metaData.resModel, [_task])
+
+            if (task_id) {
+                gantt.changeTaskId(data.id, task_id);
+            }
+
+            let args = [[Number(task_id)], {user_ids: [[6, false, data.multiple_asssign.map(strid => Number(strid))]]}]
+            const orm_call = await this.orm.call("project.task", 'write', args)
+
+            if(orm_call){
+                let results = [];
+                if (data.multiple_asssign) {
+                    data.multiple_asssign.map(userid => {
+                        for (let l = 0; l < this.all_user_names.length; l++) {
+                            if (Number(userid) === this.all_user_names[l].key) {
+                                results.push(this.all_user_names[l].label);
+                            }
+                        }
+                    });
+                }
+                gantt.getTask(Number(task_id)).user = results;
+                gantt.refreshTask(Number(task_id));
+            }
+
         } else if (this.metaData.resModel === 'project.project') {
             let _task = {
                 name: data.text,
@@ -222,7 +245,34 @@ export class GanttModel extends Model {
                 date_deadline: data.end_date,
                 parent_id: data.parent,
             }
+
+            let userids = {user_ids: [[6, false, data.multiple_asssign.map(strid => Number(strid))]]}
+            if (data.personal_stage_typeid === false) {
+                userids = {
+                    personal_stage_type_id: false,
+                    user_ids: [[6, false, data.multiple_asssign.map(strid => Number(strid))]]
+                }
+            }
+
+            let args = [[Number(id)], userids]
             await this.orm.write("project.task", [Number(id)], _task);
+            const orm_call = await this.orm.call("project.task", 'write', args)
+
+            if (orm_call === true) {
+                let result = [];
+                if (data.multiple_asssign) {
+                    data.multiple_asssign.map(userid => {
+                        for (let l = 0; l < this.all_user_names.length; l++) {
+                            if (Number(userid) === this.all_user_names[l].key) {
+                                result.push(this.all_user_names[l].label);
+                            }
+                        }
+                    });
+                }
+                gantt.getTask(Number(id)).user = result;
+                gantt.refreshTask(Number(id));
+            }
+
         } else if (data.type === 'milestone') {
             const _task = {
                 name: data.text,
@@ -454,7 +504,7 @@ export class GanttModel extends Model {
                 columns = ['id', 'name', 'date_start', 'date', 'tasks', 'exact_start_date', 'exact_end_date', 'project_progress'];
                 break;
             case "project.task":
-                columns = ['id', 'name', 'date_start', 'date_assign', 'create_date', 'date_end', 'planned_hours', 'subtask_planned_hours', 'subtask_effective_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids', 'user_ids', 'portal_user_names',];
+                columns = ['id', 'name', 'date_start', 'date_assign', 'create_date', 'date_end', 'planned_hours', 'subtask_planned_hours', 'subtask_effective_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids', 'user_ids', 'portal_user_names', 'personal_stage_type_id'];
                 break;
             default:
                 break;
@@ -554,7 +604,6 @@ export class GanttModel extends Model {
         const data = []
         const links = []
         const storedOpenedTasks = JSON.parse(localStorage.getItem("opened_tasks"));
-
         this.data.forEach(task => {
             switch (this.metaData.resModel) {
 
@@ -568,9 +617,14 @@ export class GanttModel extends Model {
                         parent: 0,
                         progress: task.project_progress / 100,
                         model: "project.project",
-                        // type: "project"
+                        type: "custom_project"
                     }
-
+                    if (task.exact_start_date === false) {
+                        _ta.start_date = this.now
+                    }
+                    if (task.exact_end_date === false) {
+                        _ta.end_date = this.now
+                    }
                     data.push(_ta)
                     break;
                 case "project.task":
@@ -584,13 +638,15 @@ export class GanttModel extends Model {
                         type: "task",
                         user: task.portal_user_names,
                         model: "project.task",
-                        open: false
+                        open: false,
+                        multiple_asssign: task.user_ids,
+                        personal_stage_typeid: task.personal_stage_type_id,
                     }
 
                     if (task.child_ids.length > 0) {
                         if (storedOpenedTasks && storedOpenedTasks.length > 0) {
                             storedOpenedTasks.forEach(taskId => {
-                                if(task.id === Number(taskId)){
+                                if (task.id === Number(taskId)) {
                                     _task.open = true
                                 }
                             });

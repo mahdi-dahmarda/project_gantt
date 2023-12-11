@@ -49,7 +49,6 @@ export class GanttRenderer extends Component {
         this.canvasRef = useRef("canvas");
         this.containerRef = useRef("container");
         this.cookies = useService("cookie");
-
         this.dataProcessor = null;
         // this.tooltip = null;
         // this.legendTooltip = null;
@@ -61,7 +60,6 @@ export class GanttRenderer extends Component {
     }
 
     onWillUnmount() {
-
         if (this.dataProcessor) {
             this.dataProcessor.destructor();
             this.dataProcessor = null;
@@ -78,10 +76,7 @@ export class GanttRenderer extends Component {
     adjustTooltipHeight(tooltip, maxTooltipHeight) {
         const sizeOneLine = tooltip.querySelector("tbody tr").clientHeight;
         const tbodySize = tooltip.querySelector("tbody").clientHeight;
-        const toKeep = Math.max(
-            0,
-            Math.floor((maxTooltipHeight - (tooltip.clientHeight - tbodySize)) / sizeOneLine) - 1
-        );
+        const toKeep = Math.max(0, Math.floor((maxTooltipHeight - (tooltip.clientHeight - tbodySize)) / sizeOneLine) - 1);
         const lines = tooltip.querySelectorAll("tbody tr");
         const toRemove = lines.length - toKeep;
         if (toRemove > 0) {
@@ -119,8 +114,7 @@ export class GanttRenderer extends Component {
         const innerHTML = renderToString("project_gantt.GanttRenderer.CustomTooltip", {
             maxWidth: getMaxWidth(this.chart.chartArea),
             measure: measures[measure].string,
-            mode: this.model.metaData.mode,
-            // tooltipItems: this.getTooltipItems(data, metaData, tooltipModel),
+            mode: this.model.metaData.mode, // tooltipItems: this.getTooltipItems(data, metaData, tooltipModel),
         });
         const template = Object.assign(document.createElement("template"), {innerHTML});
         const tooltip = template.content.firstChild;
@@ -277,17 +271,12 @@ export class GanttRenderer extends Component {
             legendOptions.labels = {
                 generateLabels: (chart) => {
                     const {data} = chart;
-                    const metaData = data.datasets.map(
-                        (_, index) => chart.getDatasetMeta(index).data
-                    );
+                    const metaData = data.datasets.map((_, index) => chart.getDatasetMeta(index).data);
                     const labels = data.labels.map((label, index) => {
                         const hidden = metaData.some((data) => data[index] && data[index].hidden);
                         const fullText = label;
                         const text = shortenLabel(fullText);
-                        const fillStyle =
-                            label === NO_DATA
-                                ? DEFAULT_BG
-                                : getColor(index, this.cookies.current.color_scheme);
+                        const fillStyle = label === NO_DATA ? DEFAULT_BG : getColor(index, this.cookies.current.color_scheme);
                         return {text, fullText, fillStyle, hidden, index};
                     });
                     return labels;
@@ -387,18 +376,14 @@ export class GanttRenderer extends Component {
         const data = this.model.data;
         // style/complete data
         // give same color to same groups from different origins
-        const colors = data.labels.map((_, index) =>
-            getColor(index, this.cookies.current.color_scheme)
-        );
+        const colors = data.labels.map((_, index) => getColor(index, this.cookies.current.color_scheme));
         const borderColor = getBorderWhite(this.cookies.current.color_scheme);
         for (const dataset of data.datasets) {
             dataset.backgroundColor = colors;
             dataset.borderColor = borderColor;
         }
         // make sure there is a zone associated with every origin
-        const representedOriginIndexes = new Set(
-            data.datasets.map((dataset) => dataset.originIndex)
-        );
+        const representedOriginIndexes = new Set(data.datasets.map((dataset) => dataset.originIndex));
         let addNoDataToLegend = false;
         const fakeData = new Array(data.labels.length + 1);
         fakeData[data.labels.length] = 1;
@@ -429,36 +414,23 @@ export class GanttRenderer extends Component {
      */
     getScaleOptions() {
         const {
-            allIntegers,
-            fields,
-            groupBy,
-            measure,
-            measures,
-            mode,
-            stacked,
+            allIntegers, fields, groupBy, measure, measures, mode, stacked,
         } = this.model.metaData;
         if (mode === "pie") {
             return {};
         }
         const xAxe = {
-            type: "category",
-            scaleLabel: {
+            type: "category", scaleLabel: {
                 display: Boolean(groupBy.length),
                 labelString: groupBy.length ? fields[groupBy[0].fieldName].string : "",
-            },
-            ticks: {callback: (value) => shortenLabel(value)},
+            }, ticks: {callback: (value) => shortenLabel(value)},
         };
         const yAxe = {
-            type: "linear",
-            scaleLabel: {
+            type: "linear", scaleLabel: {
                 labelString: measures[measure].string,
-            },
-            ticks: {
-                callback: (value) => this.formatValue(value, allIntegers),
-                suggestedMax: 0,
-                suggestedMin: 0,
-            },
-            stacked: mode === "line" && stacked ? stacked : undefined,
+            }, ticks: {
+                callback: (value) => this.formatValue(value, allIntegers), suggestedMax: 0, suggestedMin: 0,
+            }, stacked: mode === "line" && stacked ? stacked : undefined,
         };
         return {xAxes: [xAxe], yAxes: [yAxe]};
     }
@@ -513,8 +485,7 @@ export class GanttRenderer extends Component {
         const {data, metaData} = this.model;
         const {mode} = metaData;
         const tooltipOptions = {
-            enabled: false,
-            // custom: this.customTooltip.bind(this, data, metaData),
+            enabled: false, // custom: this.customTooltip.bind(this, data, metaData),
         };
         if (mode === "line") {
             tooltipOptions.mode = "index";
@@ -575,8 +546,7 @@ export class GanttRenderer extends Component {
         }
         const viewContentTop = this.rootRef.el.getBoundingClientRect().top;
         const legendTooltip = Object.assign(document.createElement("div"), {
-            className: "o_tooltip_legend popover p-3 pe-none",
-            innerText: fullText,
+            className: "o_tooltip_legend popover p-3 pe-none", innerText: fullText,
         });
         legendTooltip.style.top = `${ev.clientY - viewContentTop}px`;
         legendTooltip.style.maxWidth = getMaxWidth(this.chart.chartArea);
@@ -602,8 +572,7 @@ export class GanttRenderer extends Component {
     prepareOptions() {
         const {disableLinking, mode} = this.model.metaData;
         const options = {
-            maintainAspectRatio: false,
-            // scales: this.getScaleOptions(),
+            maintainAspectRatio: false, // scales: this.getScaleOptions(),
             // legend: this.getLegendOptions(),
             // tooltips: this.getTooltipOptions(),
             // elements: this.getElementOptions(),
@@ -635,18 +604,28 @@ export class GanttRenderer extends Component {
         // this.removeLegendTooltip();
     }
 
+    checkDefaultScale() {
+        if (this.model.metaData.resModel === 'project.task') {
+            return JSON.parse(localStorage.getItem("project" + this.model.metaData.context.active_id)) || "month";
+        } else if (this.model.metaData.resModel === 'project.project') {
+            return JSON.parse(localStorage.getItem("projects_view")) || "month";
+        }
+    }
+
     /**
      * Instantiates a Chart (Chart.js lib) to render the graph according to
      * the current config.
      */
     renderChart() {
-
         gantt.config.order_branch = true;
         gantt.config.order_branch_free = true;
         gantt.config.date_format = "%Y-%m-%d %H:%i";
-
         this.dataProcessor = gantt.createDataProcessor(this.model.config);
-        const t = this
+        // if (this.model.metaData.resModel === 'project.task') {
+        //     localStorage.setItem("current_project_id", JSON.stringify(this.model.metaData.context.active_id));
+        // }
+        // console.log(this.model.metaData)
+        // const t = this
         // gantt.attachEvent("onTaskDblClick", function (id, e) {
         //     var task = gantt.getTask(id);
         //     if(task.type !==  "milestone"){
@@ -655,6 +634,137 @@ export class GanttRenderer extends Component {
         //     }
         // });
 
+        gantt.serverList("users", this.model.all_user_names);
+        gantt.form_blocks["multiselect"] = {
+            render: function (sns) {
+                var height = (sns.height || "23") + "px";
+                var width = "548px";
+                var html = "<div class='gantt_cal_ltext gantt_cal_chosen gantt_cal_multiselect' style='height:" + height + "; width:" + width + ";'><select data-placeholder='...' class='chosen-select' multiple>";
+                if (sns.options) {
+                    for (var i = 0; i < sns.options.length; i++) {
+                        if (sns.unassigned_value !== undefined && sns.options[i].key == sns.unassigned_value) {
+                            continue;
+                        }
+                        html += "<option value='" + sns.options[i].key + "'>" + sns.options[i].label + "</option>";
+                    }
+                }
+                html += "</select></div>";
+                return html;
+            },
+
+            set_value: function (node, value, ev, sns) {
+                node.style.overflow = "visible";
+                node.parentNode.style.overflow = "visible";
+                node.style.display = "inline-block";
+                var select = $(node.firstChild);
+
+                if (value) {
+                    value = (value + "").split(",");
+                    select.val(value);
+                } else {
+                    select.val([]);
+                }
+
+                select.chosen();
+                if (sns.onchange) {
+                    select.change(function () {
+                        sns.onchange.call(this);
+                    })
+                }
+                select.trigger('chosen:updated');
+                select.trigger("change");
+            },
+
+            get_value: function (node, ev) {
+                var value = $(node.firstChild).val();
+                return value;
+            },
+
+            focus: function (node) {
+                $(node.firstChild).focus();
+            }
+        };
+
+        let model_type = 0
+        gantt.config.types.custom_projects = "custom_project";
+        gantt.locale.labels.section_title = "Project Name";
+        gantt.locale.labels.section_owner = "Assignees";
+        gantt.locale.labels.section_task = "Task Name";
+        gantt.locale.labels.section_project = "Project Name";
+        gantt.locale.labels.section_milestone = "Milestone Name";
+
+        gantt.config.lightbox.custom_projects_sections = [{
+            name: "title",
+            height: 70,
+            map_to: "text",
+            type: "textarea",
+            focus: true
+        }, {name: "time", type: "duration", readonly: true, map_to: "auto"}];
+
+        if (this.model.metaData.resModel === "project.project") {
+            model_type = 2
+            gantt.config.lightbox.sections = [{
+                name: "project",
+                height: 70,
+                map_to: "text",
+                type: "textarea",
+                focus: true
+            }, {name: "time", type: "duration", readonly: true, map_to: "auto"}];
+        }
+        if (this.model.metaData.resModel === "project.task") {
+            model_type = 1
+            gantt.config.lightbox.sections = [{
+                name: "task",
+                height: 70,
+                map_to: "text",
+                type: "textarea",
+                focus: true
+            }, {
+                name: "owner",
+                height: 60,
+                type: "multiselect",
+                options: gantt.serverList("users"),
+                map_to: "multiple_asssign",
+            }, {name: "time", type: "duration", map_to: "auto"}]
+        }
+
+        gantt.config.lightbox.project_sections = [{
+            name: "task",
+            height: 70,
+            map_to: "text",
+            type: "textarea",
+            focus: true
+        }, {
+            name: "owner",
+            height: 60,
+            type: "multiselect",
+            options: gantt.serverList("users"),
+            map_to: "multiple_asssign",
+        }, {name: "time", type: "duration", readonly: true, map_to: "auto"}];
+        gantt.config.lightbox.milestone_sections = [{
+            name: "milestone",
+            height: 70,
+            map_to: "text",
+            type: "textarea",
+            focus: true
+        }, {name: "time", type: "duration", single_date: true, map_to: "auto"}];
+
+        gantt.attachEvent("onAfterTaskAdd", function (id, item) {
+            gantt.sort("start_date", false)
+        });
+
+        gantt.attachEvent("onBeforeTaskAdd", function (id, item) {
+            if (model_type === 1) {
+                item.model = "project.task"
+                item.type = "task"
+                item.open = false
+            } else if (model_type === 2) {
+                item.model = "project.project"
+                item.type = "custom_project"
+            }
+            return true;
+        });
+
         let opened_ids = JSON.parse(localStorage.getItem("opened_tasks")) || [];
         gantt.attachEvent("onTaskOpened", function (id) {
             opened_ids.push(id);
@@ -662,7 +772,7 @@ export class GanttRenderer extends Component {
         });
 
         gantt.attachEvent("onTaskClosed", function (id) {
-             let closed_ids = JSON.parse(localStorage.getItem("opened_tasks")) || [];
+            let closed_ids = JSON.parse(localStorage.getItem("opened_tasks")) || [];
             let index = closed_ids.indexOf(id);
             if (index > -1) {
                 closed_ids.splice(index, 1);
@@ -678,43 +788,6 @@ export class GanttRenderer extends Component {
             }
             return "";
         };
-        gantt.serverList("users", this.model.all_user_names);
-        var task_sections = [
-            {name: "description", height: 60, map_to: "text", type: "textarea", focus: true},
-            {name: "user", height: 22, map_to: "user", type: "multiselect",},
-            {name: "time", height: 72, map_to: "auto", type: "duration"}
-        ];
-        var task_project_sections = [
-            {name: "description", height: 60, map_to: "text", type: "textarea", focus: true},
-            {name: "user", height: 22, map_to: "user", type: "multiselect",},
-            {name: "time", height: 72, map_to: "auto", type: "duration", readonly: true}
-        ];
-        var milestone_sections = [
-            {name: "description", height: 60, map_to: "text", type: "textarea"},
-            {name: "time", height: 72, map_to: "auto", type: "duration", single_date: true}
-        ];
-        var project_sectionss = [
-            {name: "description", height: 60, map_to: "text", type: "textarea"},
-            {name: "time", height: 72, map_to: "auto", type: "duration", readonly: true}
-        ];
-
-        gantt.attachEvent("onBeforeLightbox", function (id) {
-            var task = gantt.getTask(id);
-            if (task.type === 'task') {
-                gantt.locale.labels.section_description = 'Task Name'
-                gantt.config.lightbox.sections = task_sections
-            } else if (task.type === 'project') {
-                gantt.locale.labels.section_description = 'Task Name'
-                gantt.config.lightbox.project_sections = task_project_sections
-            } else if (task.type === 'milestone') {
-                gantt.locale.labels.section_description = 'Milestone Name'
-                gantt.config.lightbox.milestone_sections = milestone_sections;
-            } else if (task.model === 'project.project') {
-                gantt.locale.labels.section_description = 'Project Name'
-                gantt.config.lightbox.sections = project_sectionss;
-            }
-            return true;
-        });
 
         gantt.attachEvent("onBeforeTaskDrag", function (id, mode, e) {
             var task = gantt.getTask(id)
@@ -758,70 +831,38 @@ export class GanttRenderer extends Component {
         // });
 
         let zoomConfig = {
-            levels: [
-                {
-                    name: "day",
-                    scale_height: 27,
-                    min_column_width: 80,
-                    scales: [
-                        {unit: "day", step: 1, format: "%d %M"}
-                    ]
-                },
-                {
-                    name: "week",
-                    scale_height: 50,
-                    min_column_width: 50,
-                    scales: [
-                        {
-                            unit: "week", step: 1, format: function (date) {
-                                let dateToStr = gantt.date.date_to_str("%d %M");
-                                let endDate = gantt.date.add(date, -6, "day");
-                                let weekNum = gantt.date.date_to_str("%W")(date);
-                                return "#" + weekNum + ", " + dateToStr(date) + " - " + dateToStr(endDate);
-                            }
-                        },
-                        {unit: "day", step: 1, format: "%j %D"}
-                    ]
-                },
-                {
-                    name: "month",
-                    scale_height: 50,
-                    min_column_width: 120,
-                    scales: [
-                        {unit: "month", format: "%F, %Y"},
-                        {unit: "week", format: "Week #%W"}
-                    ]
-                },
-                {
-                    name: "quarter",
-                    height: 50,
-                    min_column_width: 90,
-                    scales: [
-                        {unit: "month", step: 1, format: "%M"},
-                        {
-                            unit: "quarter", step: 1, format: function (date) {
-                                let dateToStr = gantt.date.date_to_str("%M");
-                                let endDate = gantt.date.add(gantt.date.add(date, 3, "month"), -1, "day");
-                                return dateToStr(date) + " - " + dateToStr(endDate);
-                            }
-                        }
-                    ]
-                },
-                {
-                    name: "year",
-                    scale_height: 50,
-                    min_column_width: 30,
-                    scales: [
-                        {unit: "year", step: 1, format: "%Y"}
-                    ]
-                }
-            ]
+            levels: [{
+                name: "day", scale_height: 27, min_column_width: 80, scales: [{unit: "day", step: 1, format: "%d %M"}]
+            }, {
+                name: "week", scale_height: 50, min_column_width: 50, scales: [{
+                    unit: "week", step: 1, format: function (date) {
+                        let dateToStr = gantt.date.date_to_str("%d %M");
+                        let endDate = gantt.date.add(date, -6, "day");
+                        let weekNum = gantt.date.date_to_str("%W")(date);
+                        return "#" + weekNum + ", " + dateToStr(date) + " - " + dateToStr(endDate);
+                    }
+                }, {unit: "day", step: 1, format: "%j %D"}]
+            }, {
+                name: "month",
+                scale_height: 50,
+                min_column_width: 120,
+                scales: [{unit: "month", format: "%F, %Y"}, {unit: "week", format: "Week #%W"}]
+            }, {
+                name: "quarter", height: 50, min_column_width: 90, scales: [{unit: "month", step: 1, format: "%M"}, {
+                    unit: "quarter", step: 1, format: function (date) {
+                        let dateToStr = gantt.date.date_to_str("%M");
+                        let endDate = gantt.date.add(gantt.date.add(date, 3, "month"), -1, "day");
+                        return dateToStr(date) + " - " + dateToStr(endDate);
+                    }
+                }]
+            }, {
+                name: "year", scale_height: 50, min_column_width: 30, scales: [{unit: "year", step: 1, format: "%Y"}]
+            }]
         };
 
 
         gantt.ext.zoom.init(zoomConfig);
-        gantt.ext.zoom.setLevel("week");
-
+        gantt.ext.zoom.setLevel(this.checkDefaultScale());
         const {data} = this.model;
         gantt.init("gantt_here");
         gantt.clearAll();
@@ -834,7 +875,7 @@ export class GanttRenderer extends Component {
             if (task.type == gantt.config.types.milestone) {
                 return task.text;
             }
-            if (task.type == gantt.config.types.task) {
+            if (task.model == 'project.task') {
                 return task.user;
             }
             return "";
@@ -842,26 +883,41 @@ export class GanttRenderer extends Component {
         gantt.templates.progress_text = function (start, end, task) {
             return "<span style='margin-left: 10px;'>" + Math.round(task.progress * 100) + "% </span>";
         };
-        gantt.config.grid_resize = true;
-        gantt.config.multiselect = true;
-        gantt.config.multiselect_one_level = true;
 
         if (this.model.metaData.resModel === 'project.task') {
             gantt.config.grid_width = 460;
-            gantt.config.columns = [
-                {name: "user", label: "Assignees", width: '200', resize: true, align: "left"},
-                {name: "text", label: "Task Name", width: '300', resize: true, align: "left", tree: true},
-                {name: "start_date", label: "Start Date", align: "center", width: 130, resize: true},
-                {name: "duration", align: "center", width: 50, resize: true},
-                {name: "add", width: 30,}
-            ];
+            gantt.config.columns = [{
+                name: "user",
+                label: "Assignees",
+                width: '200',
+                resize: true,
+                align: "left"
+            }, {
+                name: "text",
+                label: "Task Name",
+                width: '300',
+                resize: true,
+                align: "left",
+                tree: true
+            }, {name: "start_date", label: "Start Date", align: "center", width: 130, resize: true}, {
+                name: "duration",
+                align: "center",
+                width: 50,
+                resize: true
+            }, {name: "add", width: 30,}];
         } else if (this.model.metaData.resModel === 'project.project') {
-            gantt.config.columns = [
-                {name: "text", label: "Project", width: '170', resize: true, align: "center"},
-                {name: "start_date", label: "Start Date", align: "center", width: 110, resize: true},
-                {name: "duration", align: "center", width: 50, resize: true},
-                {name: "add", width: 30,}
-            ];
+            gantt.config.columns = [{
+                name: "text",
+                label: "Project",
+                width: '170',
+                resize: true,
+                align: "center"
+            }, {name: "start_date", label: "Start Date", align: "center", width: 110, resize: true}, {
+                name: "duration",
+                align: "center",
+                width: 50,
+                resize: true
+            }, {name: "add", width: 30,}];
         }
     }
 }

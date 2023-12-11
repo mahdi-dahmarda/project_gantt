@@ -12,28 +12,30 @@ import {_lt, _t} from "@web/core/l10n/translation";
 import {Component, useRef, useEffect} from "@odoo/owl";
 
 const SCALE_LABELS = {
-    day: _lt("Day"),
-    week: _lt("Week"),
-    month: _lt("Month"),
-    quarter: _lt("Quarter"),
-    year: _lt("Year"),
+    day: _lt("Day"), week: _lt("Week"), month: _lt("Month"), quarter: _lt("Quarter"), year: _lt("Year"),
 };
 
 export class GanttController extends Component {
     setup() {
         this.actionService = useService("action");
         this.model = useModel(this.props.Model, this.props.modelParams);
-        this.scale = "week";
         this.scales = ["day", "week", "month", "quarter", "year"];
 
         useSetupView({
-            rootRef: useRef("root"),
-            getLocalState: () => {
+            rootRef: useRef("root"), getLocalState: () => {
                 return {metaData: this.model.metaData};
-            },
-            getContext: () => this.getContext(),
+            }, getContext: () => this.getContext(),
         });
     }
+
+   defaultMenuScale() {
+        if (this.model.metaData.resModel === 'project.task') {
+            return JSON.parse(localStorage.getItem("project" + this.model.metaData.context.active_id)) || "month" ;
+        } else if (this.model.metaData.resModel === 'project.project') {
+            return JSON.parse(localStorage.getItem("projects_view")) || "month";
+        }
+    }
+
     /**
      * @returns {Object}
      */
@@ -41,9 +43,7 @@ export class GanttController extends Component {
         // expand context object? change keys?
         const {measure, groupBy, mode} = this.model.metaData;
         const context = {
-            graph_measure: measure,
-            graph_mode: mode,
-            graph_groupbys: groupBy.map((gb) => gb.spec),
+            graph_measure: measure, graph_mode: mode, graph_groupbys: groupBy.map((gb) => gb.spec),
         };
         if (mode !== "pie") {
             context.graph_order = this.model.metaData.order;
@@ -63,20 +63,17 @@ export class GanttController extends Component {
      * @param {Object} context
      */
     openView(domain, views, context) {
-        this.actionService.doAction(
-            {
-                context,
-                domain,
-                name: this.model.metaData.title,
-                res_model: this.model.metaData.resModel,
-                target: "new",
-                type: "ir.actions.act_window",
-                views,
-            },
-            {
-                viewType: "form",
-            }
-        );
+        this.actionService.doAction({
+            context,
+            domain,
+            name: this.model.metaData.title,
+            res_model: this.model.metaData.resModel,
+            target: "new",
+            type: "ir.actions.act_window",
+            views,
+        }, {
+            viewType: "form",
+        });
     }
 
     /**
@@ -86,34 +83,30 @@ export class GanttController extends Component {
         const {context} = this.model.metaData;
         this.selectedTaskId = id;
         this.actionService.doAction({
-                name: this.model.metaData.title,
-                res_model: this.model.metaData.resModel,
-                res_id: id,
-                target: "new",
-                type: "ir.actions.act_window",
-                views: [[false, 'form']],
-                viewType: "form",
-                context: {},
-                domain: [],
-            },
-            {
-                props: {
-                    onSave: (record, params) => {
-                        this.actionService.doAction({
-                            type: "ir.actions.act_window_close",
-                        });
-                        // this.model.updateMetaData(this.model.metaData);
-                    }
+            name: this.model.metaData.title,
+            res_model: this.model.metaData.resModel,
+            res_id: id,
+            target: "new",
+            type: "ir.actions.act_window",
+            views: [[false, 'form']],
+            viewType: "form",
+            context: {},
+            domain: [],
+        }, {
+            props: {
+                onSave: (record, params) => {
+                    this.actionService.doAction({
+                        type: "ir.actions.act_window_close",
+                    });
+                    // this.model.updateMetaData(this.model.metaData);
                 }
             }
-        );
+        });
 
 
     }
 
-// selectTaskById(taskId) {
-//         gantt.selectTask(taskId);
-//     }
+
     /**
      * @param {Object} param0
      * @param {string} param0.measure
@@ -157,6 +150,11 @@ export class GanttController extends Component {
     }
 
     setScale(scale) {
+        if (this.model.metaData.resModel === "project.project") {
+            localStorage.setItem("projects_view", JSON.stringify(scale));
+        } else if (this.model.metaData.resModel === "project.task") {
+            localStorage.setItem("project" + this.model.metaData.context.active_id, JSON.stringify(scale));
+        }
         this.scale = scale;
         gantt.ext.zoom.setLevel(scale);
     }
@@ -166,9 +164,5 @@ GanttController.template = "project_gantt.GanttView";
 GanttController.components = {Dropdown, DropdownItem, GroupByMenu, Layout};
 
 GanttController.props = {
-    ...standardViewProps,
-    Model: Function,
-    modelParams: Object,
-    Renderer: Function,
-    buttonTemplate: String,
+    ...standardViewProps, Model: Function, modelParams: Object, Renderer: Function, buttonTemplate: String,
 };

@@ -29,7 +29,7 @@
             <Dropdown class="'btn-group'" togglerClass="'btn btn-secondary scale_button_selection text-uppercase'"
                       hotkey="'v'" showCaret="true">
                 <t t-set-slot="toggler">
-                    <t t-esc="scaleLabels[this.scale]"/>
+                    <t t-esc="scaleLabels[this.defaultMenuScale()]"/>
                 </t>
                 <t t-foreach="scales" t-as="scale" t-key="scale">
                     <DropdownItem class="`o_calendar_button_${scale} btn btn-secondary text-uppercase`"
