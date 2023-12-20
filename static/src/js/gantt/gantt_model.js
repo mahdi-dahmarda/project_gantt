@@ -326,10 +326,7 @@ export class GanttModel extends Model {
                 [Number(id)],
                 {"depend_on_ids": [[6, false, []]]}
             ]
-            const deleted_link = this.orm.call(this.metaData.resModel, 'write', args)
-            // if(deleted_link){
-            //     gantt.deleteLink(id);
-            // }
+            this.orm.call(this.metaData.resModel, 'write', args)
         } else if (this.metaData.resModel === 'project.project') {
 
         }
@@ -549,14 +546,17 @@ export class GanttModel extends Model {
         const user_ids_flat = user_ids.flat();
         const user = [];
         user_ids_flat.forEach((user_data) => {
+            let user_name = user_data.partner_id[1]
+            if(user_name.includes('YourCompany,')){
+               user_name = user_name.replace("YourCompany,", "");
+            }
             const users = {
                 key: user_data.id,
-                label: user_data.partner_id[1]
+                label: user_name
             }
             user.push(users);
         });
         this.all_user_names = user;
-
         const All_data = await Promise.all(proms);
         const milestoneData = await Promise.all(milestones);
         this.milestones = milestoneData.flat();
