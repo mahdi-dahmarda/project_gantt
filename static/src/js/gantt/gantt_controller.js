@@ -19,6 +19,7 @@ export class GanttController extends Component {
     setup() {
         this.actionService = useService("action");
         this.model = useModel(this.props.Model, this.props.modelParams);
+        this.scale = "month"
         this.scales = ["day", "week", "month", "quarter", "year"];
 
         useSetupView({
@@ -30,9 +31,10 @@ export class GanttController extends Component {
 
    defaultMenuScale() {
         if (this.model.metaData.resModel === 'project.task') {
-            return JSON.parse(localStorage.getItem("project" + this.model.metaData.context.active_id)) || "month" ;
-        } else if (this.model.metaData.resModel === 'project.project') {
-            return JSON.parse(localStorage.getItem("projects_view")) || "month";
+            return JSON.parse(sessionStorage.getItem("project" + this.model.metaData.context.active_id)) || "month" ;
+        }
+        if (this.model.metaData.resModel === 'project.project') {
+            return JSON.parse(sessionStorage.getItem("projects_view")) || "month";
         }
     }
 
@@ -151,9 +153,9 @@ export class GanttController extends Component {
 
     setScale(scale) {
         if (this.model.metaData.resModel === "project.project") {
-            localStorage.setItem("projects_view", JSON.stringify(scale));
+                  sessionStorage.setItem("projects_view", JSON.stringify(scale));
         } else if (this.model.metaData.resModel === "project.task") {
-            localStorage.setItem("project" + this.model.metaData.context.active_id, JSON.stringify(scale));
+                 sessionStorage.setItem("project" + this.model.metaData.context.active_id, JSON.stringify(scale));
         }
         this.scale = scale;
         gantt.ext.zoom.setLevel(scale);

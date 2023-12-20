@@ -1,32 +1,54 @@
 // ------- Graph renderer -------
 .o_graph_renderer canvas {
-    background-color: $o-view-background-color;
+  background-color: $o-view-background-color;
 }
 
 .o_graph_view {
-    .o_cp_bottom_left {
-        display: block;
-    }
+  .o_cp_bottom_left {
+    display: block;
+  }
 }
 
 // ------- Sample mode -------
 .o_graph_view .o_view_sample_data {
-    .o_graph_renderer {
-        @include o-sample-data-disabled;
-    }
+  .o_graph_renderer {
+    @include o-sample-data-disabled;
+  }
 }
+
 .gantt_task_progress {
-			text-align: left;
-			box-sizing: border-box;
-			color: white;
-			font-weight: bold;
-		}
-.nested_task .gantt_add{
-    display: none !important;
+  text-align: left;
+  box-sizing: border-box;
+  color: white;
+  font-weight: bold;
 }
-.gantt_time_selects , .gantt_duration {
+
+.nested_task .gantt_add {
+  display: none !important;
+}
+
+.gantt_time_selects {
   display: inline-flex !important;
 }
-.search-choice-close{
+
+.search-choice-close {
   color: black !important;
+}
+
+.custom_project {
+  border: 1px solid #818cf8;
+  color: white;
+  background: #818cf8;
+}
+
+.custom_project .gantt_task_progress {
+  background: #6366f1;
+}
+
+.custom_project .gantt_link_control {
+  display: none !important;
+}
+
+.custom_project .gantt_task_drag {
+  display: none !important;
 }

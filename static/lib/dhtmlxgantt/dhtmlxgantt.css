@@ -1350,6 +1350,7 @@ div.dhx_modal_cover {
   border: 1px solid #CECECE;
 }
 .gantt_duration {
+  display: inline-flex;
   width: 100px;
   height: 23px;
   float: left;

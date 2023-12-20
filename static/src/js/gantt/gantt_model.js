@@ -186,7 +186,8 @@ export class GanttModel extends Model {
                         _t.createLink(data)
                     }
                 },
-                update: function (data, id) {
+                update: function (id, data) {
+                    // _t.updateLink(id, data)
                 },
                 delete: function (id) {
                     _t.deleteLink(id)
@@ -213,7 +214,7 @@ export class GanttModel extends Model {
             let args = [[Number(task_id)], {user_ids: [[6, false, data.multiple_asssign.map(strid => Number(strid))]]}]
             const orm_call = await this.orm.call("project.task", 'write', args)
 
-            if(orm_call){
+            if (orm_call) {
                 let results = [];
                 if (data.multiple_asssign) {
                     data.multiple_asssign.map(userid => {
@@ -232,9 +233,11 @@ export class GanttModel extends Model {
             let _task = {
                 name: data.text,
             }
-            await this.orm.create(this.metaData.resModel, [_task])
+            const project_id = await this.orm.create(this.metaData.resModel, [_task])
+            if (project_id) {
+                gantt.changeTaskId(data.id, project_id);
+            }
         }
-
     }
 
     async updateTask(id, data) {
@@ -243,7 +246,7 @@ export class GanttModel extends Model {
                 name: data.text,
                 date_start: data.start_date,
                 date_deadline: data.end_date,
-                parent_id: data.parent,
+                parent_id: Number(data.parent),
             }
 
             let userids = {user_ids: [[6, false, data.multiple_asssign.map(strid => Number(strid))]]}
@@ -255,7 +258,7 @@ export class GanttModel extends Model {
             }
 
             let args = [[Number(id)], userids]
-            await this.orm.write("project.task", [Number(id)], _task);
+            const orm_write = await this.orm.write("project.task", [Number(id)], _task);
             const orm_call = await this.orm.call("project.task", 'write', args)
 
             if (orm_call === true) {
@@ -264,7 +267,7 @@ export class GanttModel extends Model {
                     data.multiple_asssign.map(userid => {
                         for (let l = 0; l < this.all_user_names.length; l++) {
                             if (Number(userid) === this.all_user_names[l].key) {
-                                result.push(this.all_user_names[l].label);
+                                result.push(" " + this.all_user_names[l].label);
                             }
                         }
                     });
@@ -272,6 +275,7 @@ export class GanttModel extends Model {
                 gantt.getTask(Number(id)).user = result;
                 gantt.refreshTask(Number(id));
             }
+
 
         } else if (data.type === 'milestone') {
             const _task = {
@@ -290,7 +294,11 @@ export class GanttModel extends Model {
     async deleteTask(id) {
         let id_string = id.toString();
         if (!id_string.includes('MLT')) {
-            await this.orm.unlink(this.metaData.resModel, [Number(id)]);
+            if (this.metaData.resModel === 'project.task') {
+                await this.orm.unlink("project.task", [Number(id)]);
+            } else if (this.metaData.resModel === 'project.project') {
+                await this.orm.unlink("project.project", [Number(id)]);
+            }
         } else {
             await this.orm.unlink("project.milestone", [Number(id.substring(3))]);
         }
@@ -302,11 +310,14 @@ export class GanttModel extends Model {
                 [Number(link.target)],
                 {"depend_on_ids": [[6, false, [Number(link.source)]]]}
             ]
-            await this.orm.call(this.metaData.resModel, 'write', args);
+            const task_linked = await this.orm.call(this.metaData.resModel, 'write', args);
+            if(task_linked){
+                gantt.changeLinkId(link.id, link.target);
+            }
+
         } else if (this.metaData.resModel === 'project.project') {
 
         }
-
     }
 
     async deleteLink(id) {
@@ -315,7 +326,10 @@ export class GanttModel extends Model {
                 [Number(id)],
                 {"depend_on_ids": [[6, false, []]]}
             ]
-            this.orm.call(this.metaData.resModel, 'write', args)
+            const deleted_link = this.orm.call(this.metaData.resModel, 'write', args)
+            // if(deleted_link){
+            //     gantt.deleteLink(id);
+            // }
         } else if (this.metaData.resModel === 'project.project') {
 
         }
@@ -603,7 +617,7 @@ export class GanttModel extends Model {
     async _prepareData() {
         const data = []
         const links = []
-        const storedOpenedTasks = JSON.parse(localStorage.getItem("opened_tasks"));
+        const storedOpenedTasks = JSON.parse(sessionStorage.getItem("opened_tasks"));
         this.data.forEach(task => {
             switch (this.metaData.resModel) {
 
