@@ -40,12 +40,15 @@ class ProjectProject(models.Model):
             subtask_planned_hours = 0
             subtask_effective_hours = 0
             for task in project.tasks:
-                planned_hours += task.planned_hours
-                remaining_hours += task.remaining_hours
-                subtask_planned_hours += task.subtask_planned_hours
-                subtask_effective_hours += task.subtask_effective_hours
+                if not task.parent_id:
+                    if not task.child_ids:
+                        planned_hours += task.planned_hours
+                        remaining_hours += task.remaining_hours
+                    if task.child_ids:
+                        subtask_planned_hours += task.subtask_planned_hours
+                        subtask_effective_hours += task.subtask_effective_hours
             if task.subtask_planned_hours or planned_hours:
-                project.project_progress = ((planned_hours - remaining_hours) + subtask_effective_hours) / (planned_hours + subtask_planned_hours) * 100
+                project.project_progress = ((planned_hours - remaining_hours) + subtask_effective_hours) / (
+                            planned_hours + subtask_planned_hours) * 100
             else:
                 project.project_progress = 0.0
-

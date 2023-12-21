@@ -621,7 +621,6 @@ export class GanttRenderer extends Component {
         this.dataProcessor = gantt.createDataProcessor(this.model.config);
         gantt.serverList("users", this.model.all_user_names);
         gantt.config.auto_types = true;
-        // console.log("data",this.model)
         // const t = this
         // gantt.attachEvent("onTaskDblClick", function (id, e) {
         //     var task = gantt.getTask(id);

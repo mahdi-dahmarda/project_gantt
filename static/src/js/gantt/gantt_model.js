@@ -240,6 +240,19 @@ export class GanttModel extends Model {
         }
     }
 
+    async parentProgress(id) {
+        gantt.eachParent(function (task) {
+            const children = gantt.getChildren(task.id);
+            let childProgress = 0;
+            for (let i = 0; i < children.length; i++) {
+                const child = gantt.getTask(children[i])
+                childProgress += (child.progress * 100);
+            }
+            gantt.getTask(Number(task.id)).progress = childProgress / children.length / 100;
+            gantt.refreshTask(Number(id))
+        }, id)
+    }
+
     async updateTask(id, data) {
         if (data.model === 'project.task') {
             const _task = {
@@ -274,6 +287,9 @@ export class GanttModel extends Model {
                 }
                 gantt.getTask(Number(id)).user = result;
                 gantt.refreshTask(Number(id));
+            }
+            if(orm_write){
+                this.parentProgress(Number(id))
             }
 
 
