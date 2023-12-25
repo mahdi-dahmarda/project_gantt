@@ -1,13 +1,13 @@
 /** @odoo-module **/
 
-import { sortBy } from "@web/core/utils/arrays";
-import { KeepLast, Race } from "@web/core/utils/concurrency";
-import { rankInterval } from "@web/search/utils/dates";
-import { getGroupBy } from "@web/search/utils/group_by";
-import { GROUPABLE_TYPES } from "@web/search/utils/misc";
-import { Model } from "@web/views/model";
-import { computeReportMeasures, processMeasure } from "@web/views/utils";
-import { useEffect } from "@odoo/owl";
+import {sortBy} from "@web/core/utils/arrays";
+import {KeepLast, Race} from "@web/core/utils/concurrency";
+import {rankInterval} from "@web/search/utils/dates";
+import {getGroupBy} from "@web/search/utils/group_by";
+import {GROUPABLE_TYPES} from "@web/search/utils/misc";
+import {Model} from "@web/views/model";
+import {computeReportMeasures, processMeasure} from "@web/views/utils";
+import {useEffect} from "@odoo/owl";
 
 export const SEP = " / ";
 
@@ -100,6 +100,7 @@ export class GanttModel extends Model {
         this.searchParams = null;
         this.config = this._getDataProcessorConfiguration();
         this.now = new Date();
+        this.all_user_names = null;
     }
 
     //--------------------------------------------------------------------------
@@ -149,9 +150,12 @@ export class GanttModel extends Model {
     get scale() {
         return this.metaData.scale;
     }
+
     get scales() {
         return this.metaData.scales;
     }
+
+
     //--------------------------------------------------------------------------
     // Protected
     //--------------------------------------------------------------------------
@@ -172,56 +176,178 @@ export class GanttModel extends Model {
                 update: function (data, id) {
                     _t.updateTask(id, data)
                 },
-                delete: function (id) { }
+                delete: function (id) {
+                    _t.deleteTask(id)
+                }
             },
             link: {
                 create: function (data) {
                     if (data.type === '0') {
                         _t.createLink(data)
-
                     }
                 },
-                update: function (data, id) { },
-                delete: function (data) {
-                    _t.deleteLink(data)
+                update: function (id, data) {
+                    // _t.updateLink(id, data)
+                },
+                delete: function (id) {
+                    _t.deleteLink(id)
                 }
             }
         }
     }
 
     async createTask(data) {
+        if (this.metaData.resModel === 'project.task') {
+            let _task = {
+                name: data.text,
+                date_start: data.start_date,
+                date_deadline: data.end_date,
+                parent_id: data.parent,
+                project_id: this.metaData.context.active_id,
+            }
+            let task_id = await this.orm.create(this.metaData.resModel, [_task])
 
-        const _task = {
-            name: data.text,
-            date_start: data.start_date,
-            date_deadline: data.end_date,
-            parent_id: data.parent,
-            project_id: this.metaData.context.active_id,
+            if (task_id) {
+                gantt.changeTaskId(data.id, task_id);
+            }
+
+            let args = [[Number(task_id)], {user_ids: [[6, false, data.multiple_asssign.map(strid => Number(strid))]]}]
+            const orm_call = await this.orm.call("project.task", 'write', args)
+
+            if (orm_call) {
+                let results = [];
+                if (data.multiple_asssign) {
+                    data.multiple_asssign.map(userid => {
+                        for (let l = 0; l < this.all_user_names.length; l++) {
+                            if (Number(userid) === this.all_user_names[l].key) {
+                                results.push(this.all_user_names[l].label);
+                            }
+                        }
+                    });
+                }
+                gantt.getTask(Number(task_id)).user = results;
+                gantt.refreshTask(Number(task_id));
+            }
+
+        } else if (this.metaData.resModel === 'project.project') {
+            let _task = {
+                name: data.text,
+            }
+            const project_id = await this.orm.create(this.metaData.resModel, [_task])
+            if (project_id) {
+                gantt.changeTaskId(data.id, project_id);
+            }
         }
-        await this.orm.create(this.metaData.resModel, [_task]);
     }
+
+    async parentProgress(id) {
+        gantt.eachParent(function (task) {
+            const children = gantt.getChildren(task.id);
+            let childProgress = 0;
+            for (let i = 0; i < children.length; i++) {
+                const child = gantt.getTask(children[i])
+                childProgress += (child.progress * 100);
+            }
+            gantt.getTask(Number(task.id)).progress = childProgress / children.length / 100;
+            gantt.refreshTask(Number(id))
+        }, id)
+    }
+
     async updateTask(id, data) {
-        const _task = {
-            name: data.text,
-            date_start: data.start_date,
-            date_deadline: data.end_date,
-            parent_id: data.parent,
+        if (data.model === 'project.task') {
+            const _task = {
+                name: data.text,
+                date_start: data.start_date,
+                date_deadline: data.end_date,
+                parent_id: Number(data.parent),
+            }
+
+            let userids = {user_ids: [[6, false, data.multiple_asssign.map(strid => Number(strid))]]}
+            if (data.personal_stage_typeid === false) {
+                userids = {
+                    personal_stage_type_id: false,
+                    user_ids: [[6, false, data.multiple_asssign.map(strid => Number(strid))]]
+                }
+            }
+
+            let args = [[Number(id)], userids]
+            const orm_write = await this.orm.write("project.task", [Number(id)], _task);
+            const orm_call = await this.orm.call("project.task", 'write', args)
+
+            if (orm_call === true) {
+                let result = [];
+                if (data.multiple_asssign) {
+                    data.multiple_asssign.map(userid => {
+                        for (let l = 0; l < this.all_user_names.length; l++) {
+                            if (Number(userid) === this.all_user_names[l].key) {
+                                result.push(" " + this.all_user_names[l].label);
+                            }
+                        }
+                    });
+                }
+                gantt.getTask(Number(id)).user = result;
+                gantt.refreshTask(Number(id));
+            }
+            if(orm_write){
+                this.parentProgress(Number(id))
+            }
+
+
+        } else if (data.type === 'milestone') {
+            const _task = {
+                name: data.text,
+                deadline: data.start_date,
+            }
+            await this.orm.write('project.milestone', [Number(id.substring(3))], _task);
+        } else if (data.model === 'project.project') {
+            const _task = {
+                name: data.text,
+            }
+            await this.orm.write('project.project', [Number(id)], _task);
         }
-        await this.orm.write(this.metaData.resModel, [Number(id)], _task);
+    }
+
+    async deleteTask(id) {
+        let id_string = id.toString();
+        if (!id_string.includes('MLT')) {
+            if (this.metaData.resModel === 'project.task') {
+                await this.orm.unlink("project.task", [Number(id)]);
+            } else if (this.metaData.resModel === 'project.project') {
+                await this.orm.unlink("project.project", [Number(id)]);
+            }
+        } else {
+            await this.orm.unlink("project.milestone", [Number(id.substring(3))]);
+        }
     }
 
     async createLink(link) {
-        const args = [
-            [Number(link.target)],
-            { "depend_on_ids": [[6, false, [Number(link.source)]]] }
-        ]
-        this.orm.call(this.metaData.resModel, 'write', args)
+        if (this.metaData.resModel === 'project.task') {
+            const args = [
+                [Number(link.target)],
+                {"depend_on_ids": [[6, false, [Number(link.source)]]]}
+            ]
+            const task_linked = await this.orm.call(this.metaData.resModel, 'write', args);
+            if(task_linked){
+                gantt.changeLinkId(link.id, link.target);
+            }
+
+        } else if (this.metaData.resModel === 'project.project') {
+
+        }
     }
 
-    async deleteLink(data,id) {
-               // this.orm.call(this.metaData.resModel, 'unlink', [this.milestone.id]);
-    }
+    async deleteLink(id) {
+        if (this.metaData.resModel === 'project.task') {
+            const args = [
+                [Number(id)],
+                {"depend_on_ids": [[6, false, []]]}
+            ]
+            this.orm.call(this.metaData.resModel, 'write', args)
+        } else if (this.metaData.resModel === 'project.project') {
 
+        }
+
+    }
 
 
     /**
@@ -230,14 +356,14 @@ export class GanttModel extends Model {
      * @returns {Object}
      */
     _buildMetaData(params) {
-        const { comparison, domain, context, groupBy } = this.searchParams;
+        const {comparison, domain, context, groupBy} = this.searchParams;
 
-        const metaData = Object.assign({}, this.metaData, { context });
+        const metaData = Object.assign({}, this.metaData, {context});
         if (comparison) {
             metaData.domains = comparison.domains;
             metaData.comparisonField = comparison.fieldName;
         } else {
-            metaData.domains = [{ arrayRepr: domain, description: null }];
+            metaData.domains = [{arrayRepr: domain, description: null}];
         }
         metaData.measure = context.graph_measure || metaData.measure;
         metaData.mode = context.graph_mode || metaData.mode;
@@ -278,8 +404,8 @@ export class GanttModel extends Model {
      * @returns {string}
      */
     _getDatasetLabel(dataPoint) {
-        const { measure, measures, domains, mode } = this.metaData;
-        const { labels, originIndex } = dataPoint;
+        const {measure, measures, domains, mode} = this.metaData;
+        const {labels, originIndex} = dataPoint;
         if (mode === "pie") {
             return domains[originIndex].description || "";
         }
@@ -299,9 +425,9 @@ export class GanttModel extends Model {
      * @returns {DateClasses}
      */
     _getDateClasses(dataPoints) {
-        const { domains } = this.metaData;
+        const {domains} = this.metaData;
         const dateSets = domains.map(() => new Set());
-        for (const { labels, originIndex } of dataPoints) {
+        for (const {labels, originIndex} of dataPoints) {
             const date = labels[0];
             dateSets[originIndex].add(date);
         }
@@ -315,7 +441,7 @@ export class GanttModel extends Model {
      * @returns {Object[]}
      */
     _getProcessedDataPoints() {
-        const { domains, groupBy, mode, order } = this.metaData;
+        const {domains, groupBy, mode, order} = this.metaData;
 
         let processedDataPoints = [];
         // if (mode === "line") {
@@ -353,7 +479,7 @@ export class GanttModel extends Model {
      * @returns {boolean}
      */
     _isValidData(dataPoints) {
-        const { mode } = this.metaData;
+        const {mode} = this.metaData;
         let somePositive = false;
         if (mode === "pie") {
             for (const dataPt of dataPoints) {
@@ -377,11 +503,11 @@ export class GanttModel extends Model {
      */
     async _loadData(metaData) {
 
-        const { measure, domains, fields, groupBy, resModel } = metaData;
+        const {measure, domains, fields, groupBy, resModel} = metaData;
 
         const measures = ["__count"];
         if (measure !== "__count") {
-            let { group_operator, type } = fields[measure];
+            let {group_operator, type} = fields[measure];
             if (type === "many2one") {
                 group_operator = "count_distinct";
             }
@@ -395,18 +521,17 @@ export class GanttModel extends Model {
 
         const proms = [];
         const milestones = [];
-
+        const user_id = [];
         const numbering = {}; // used to avoid ambiguity with many2one with values with same labels:
         // for instance [1, "ABC"] [3, "ABC"] should be distinguished.
-
 
         let columns = [];
         switch (resModel) {
             case "project.project":
-                columns = ['id', 'name', 'date_start', 'date'];
+                columns = ['id', 'name', 'date_start', 'date', 'tasks', 'exact_start_date', 'exact_end_date', 'project_progress'];
                 break;
             case "project.task":
-                columns = ['id', 'name', 'date_start','date_assign','create_date','date_end', 'planned_hours', 'subtask_planned_hours', 'subtask_effective_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids'];
+                columns = ['id', 'name', 'date_start', 'date_assign', 'create_date', 'date_end', 'planned_hours', 'subtask_planned_hours', 'subtask_effective_hours', 'date_deadline', 'parent_id', 'milestone_id', 'progress', 'child_ids', 'ancestor_id', 'depend_on_ids', 'user_ids', 'portal_user_names', 'personal_stage_type_id'];
                 break;
             default:
                 break;
@@ -415,15 +540,39 @@ export class GanttModel extends Model {
         domains.forEach((domain, originIndex) => {
             proms.push(this.orm
                 .searchRead(resModel, domain.arrayRepr, columns, {})
-                .then((data) => { return data; }));
-            console.log("proms",proms)
-            if(resModel === 'project.task'){
-                 milestones.push(this.orm
-                .searchRead("project.milestone", [["project_id", "=", domain.arrayRepr[0][2]]], ['id', 'project_id', 'name', 'deadline', 'reached_date'], {})
-                .then((milestoneData) => { return milestoneData; }));
+                .then((data) => {
+                    return data;
+
+                }));
+
+            if (resModel === 'project.task') {
+                milestones.push(this.orm
+                    .searchRead("project.milestone", [["project_id", "=", domain.arrayRepr[0][2]]], ['id', 'project_id', 'name', 'deadline', 'reached_date'], {})
+                    .then((milestoneData) => {
+                        return milestoneData;
+                    }));
             }
         });
 
+        user_id.push(this.orm.searchRead("res.users", [], ['partner_id'], {})
+            .then((data) => {
+                return data;
+            }));
+        const user_ids = await Promise.all(user_id);
+        const user_ids_flat = user_ids.flat();
+        const user = [];
+        user_ids_flat.forEach((user_data) => {
+            let user_name = user_data.partner_id[1]
+            if(user_name.includes('YourCompany,')){
+               user_name = user_name.replace("YourCompany,", "");
+            }
+            const users = {
+                key: user_data.id,
+                label: user_name
+            }
+            user.push(users);
+        });
+        this.all_user_names = user;
         const All_data = await Promise.all(proms);
         const milestoneData = await Promise.all(milestones);
         this.milestones = milestoneData.flat();
@@ -440,7 +589,7 @@ export class GanttModel extends Model {
      * @param {Object} metaData
      */
     _normalize(metaData) {
-        const { fields } = metaData;
+        const {fields} = metaData;
         const groupBy = [];
         for (const gb of metaData.groupBy) {
             let ngb = gb;
@@ -452,8 +601,8 @@ export class GanttModel extends Model {
 
         const processedGroupBy = [];
         for (const gb of groupBy) {
-            const { fieldName, interval } = gb;
-            const { sortable, type, store } = fields[fieldName];
+            const {fieldName, interval} = gb;
+            const {sortable, type, store} = fields[fieldName];
             if (
                 // many2many is groupable precisely when it is stored (cf. groupable in odoo/fields.py)
                 (type === "many2many" ? !store : !sortable) ||
@@ -480,25 +629,32 @@ export class GanttModel extends Model {
     /**
      * @protected
      */
+
     async _prepareData() {
         const data = []
         const links = []
-
+        const storedOpenedTasks = JSON.parse(sessionStorage.getItem("opened_tasks"));
         this.data.forEach(task => {
-
             switch (this.metaData.resModel) {
 
                 case "project.project":
                     const _ta = {
                         id: task.id,
                         text: task.name,
-                        start_date: task.date_start,
-                        end_date: task.date,
+                        start_date: task.exact_start_date,
+                        end_date: task.exact_end_date,
                         // duration:5,
                         parent: 0,
-                        progress: 0.5
+                        progress: task.project_progress / 100,
+                        model: "project.project",
+                        type: "custom_project"
                     }
-
+                    if (task.exact_start_date === false) {
+                        _ta.start_date = this.now
+                    }
+                    if (task.exact_end_date === false) {
+                        _ta.end_date = this.now
+                    }
                     data.push(_ta)
                     break;
                 case "project.task":
@@ -509,36 +665,44 @@ export class GanttModel extends Model {
                         end_date: task.date_deadline,
                         parent: task.parent_id[0],
                         progress: task.progress / 100,
+                        type: "task",
+                        user: task.portal_user_names,
+                        model: "project.task",
+                        open: false,
+                        multiple_asssign: task.user_ids,
+                        personal_stage_typeid: task.personal_stage_type_id,
                     }
+
                     if (task.child_ids.length > 0) {
+                        if (storedOpenedTasks && storedOpenedTasks.length > 0) {
+                            storedOpenedTasks.forEach(taskId => {
+                                if (task.id === Number(taskId)) {
+                                    _task.open = true
+                                }
+                            });
+                        }
                         _task.type = 'project';
                         _task.progress = task.subtask_effective_hours / task.subtask_planned_hours;
                     }
-
-
-                    if(task.date_start === false){
-                        if(task.date_assign){
+                    if (task.date_start === false) {
+                        if (task.date_assign) {
                             _task.start_date = task.date_assign;
-                        }
-                        else { _task.start_date = task.create_date;
+                        } else {
+                            _task.start_date = task.create_date;
                         }
                     }
-
-                    if(task.date_deadline === false){
-                        if(task.date_end){
+                    if (task.date_deadline === false) {
+                        if (task.date_end) {
                             _task.end_date = task.date_end;
-                        }
-                        else {
-                                _task.end_date = this.now;
+                        } else {
+                            _task.end_date = this.now;
                         }
                     }
                     data.push(_task)
-
                     if (task.depend_on_ids.length > 0) {
-                        console.log(task)
                         task.depend_on_ids.map(depend_id => {
                             const _link = {
-                                id: generateKey(10),
+                                id: task.id,
                                 source: depend_id,
                                 target: task.id,
                                 type: '0'
@@ -553,20 +717,22 @@ export class GanttModel extends Model {
             }
 
         })
+
         if (this.milestones) {
             this.milestones.forEach(milestone => {
                 const _miles = {
-                    id: milestone.id,
+                    id: 'MLT' + milestone.id,
                     text: milestone.name,
                     start_date: milestone.deadline ? milestone.deadline : new Date(),
                     end_date: milestone.reached_date ? milestone.reached_date : new Date(),
                     type: "milestone",
                 }
-                data.push(_miles)
+                data.push(_miles);
             })
         }
         this.data = null
-        this.data = { data, links }
+
+        this.data = {data, links}
 
     }
 

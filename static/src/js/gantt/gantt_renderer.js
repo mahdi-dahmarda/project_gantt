@@ -45,15 +45,13 @@ export class GanttRenderer extends Component {
     setup() {
         this.model = this.props.model;
         this.onGraphClicked = this.props.onGraphClicked;
-
         this.rootRef = useRef("root");
         this.canvasRef = useRef("canvas");
         this.containerRef = useRef("container");
         this.cookies = useService("cookie");
-
         this.dataProcessor = null;
-        this.tooltip = null;
-        this.legendTooltip = null;
+        // this.tooltip = null;
+        // this.legendTooltip = null;
 
         onWillStart(() => loadJS("/web/static/lib/Chart/Chart.js"));
 
@@ -62,7 +60,6 @@ export class GanttRenderer extends Component {
     }
 
     onWillUnmount() {
-
         if (this.dataProcessor) {
             this.dataProcessor.destructor();
             this.dataProcessor = null;
@@ -79,10 +76,7 @@ export class GanttRenderer extends Component {
     adjustTooltipHeight(tooltip, maxTooltipHeight) {
         const sizeOneLine = tooltip.querySelector("tbody tr").clientHeight;
         const tbodySize = tooltip.querySelector("tbody").clientHeight;
-        const toKeep = Math.max(
-            0,
-            Math.floor((maxTooltipHeight - (tooltip.clientHeight - tbodySize)) / sizeOneLine) - 1
-        );
+        const toKeep = Math.max(0, Math.floor((maxTooltipHeight - (tooltip.clientHeight - tbodySize)) / sizeOneLine) - 1);
         const lines = tooltip.querySelectorAll("tbody tr");
         const toRemove = lines.length - toKeep;
         if (toRemove > 0) {
@@ -108,7 +102,7 @@ export class GanttRenderer extends Component {
     customTooltip(data, metaData, tooltipModel) {
         const { measure, measures, disableLinking, mode } = metaData;
         this.rootRef.el.style.cursor = "";
-        this.removeTooltips();
+        // this.removeTooltips();
         if (tooltipModel.opacity === 0 || tooltipModel.dataPoints.length === 0) {
             return;
         }
@@ -120,8 +114,7 @@ export class GanttRenderer extends Component {
         const innerHTML = renderToString("project_gantt.GanttRenderer.CustomTooltip", {
             maxWidth: getMaxWidth(this.chart.chartArea),
             measure: measures[measure].string,
-            mode: this.model.metaData.mode,
-            tooltipItems: this.getTooltipItems(data, metaData, tooltipModel),
+            mode: this.model.metaData.mode, // tooltipItems: this.getTooltipItems(data, metaData, tooltipModel),
         });
         const template = Object.assign(document.createElement("template"), { innerHTML });
         const tooltip = template.content.firstChild;
@@ -155,10 +148,10 @@ export class GanttRenderer extends Component {
             // cut it the minimum possible.
             top = minTopAllowed;
             const maxTooltipHeight = window.innerHeight - (viewContentTop + chartAreaTop) - 2;
-            this.adjustTooltipHeight(tooltip, maxTooltipHeight);
+            // this.adjustTooltipHeight(tooltip, maxTooltipHeight);
         }
-        this.fixTooltipLeftPosition(tooltip, tooltipModel.x);
-        tooltip.style.top = Math.floor(top) + "px";
+        // this.fixTooltipLeftPosition(tooltip, tooltipModel.x);
+        // tooltip.style.top = Math.floor(top) + "px";
 
         this.tooltip = tooltip;
     }
@@ -278,17 +271,12 @@ export class GanttRenderer extends Component {
             legendOptions.labels = {
                 generateLabels: (chart) => {
                     const { data } = chart;
-                    const metaData = data.datasets.map(
-                        (_, index) => chart.getDatasetMeta(index).data
-                    );
+                    const metaData = data.datasets.map((_, index) => chart.getDatasetMeta(index).data);
                     const labels = data.labels.map((label, index) => {
                         const hidden = metaData.some((data) => data[index] && data[index].hidden);
                         const fullText = label;
                         const text = shortenLabel(fullText);
-                        const fillStyle =
-                            label === NO_DATA
-                                ? DEFAULT_BG
-                                : getColor(index, this.cookies.current.color_scheme);
+                        const fillStyle = label === NO_DATA ? DEFAULT_BG : getColor(index, this.cookies.current.color_scheme);
                         return { text, fullText, fillStyle, hidden, index };
                     });
                     return labels;
@@ -388,18 +376,14 @@ export class GanttRenderer extends Component {
         const data = this.model.data;
         // style/complete data
         // give same color to same groups from different origins
-        const colors = data.labels.map((_, index) =>
-            getColor(index, this.cookies.current.color_scheme)
-        );
+        const colors = data.labels.map((_, index) => getColor(index, this.cookies.current.color_scheme));
         const borderColor = getBorderWhite(this.cookies.current.color_scheme);
         for (const dataset of data.datasets) {
             dataset.backgroundColor = colors;
             dataset.borderColor = borderColor;
         }
         // make sure there is a zone associated with every origin
-        const representedOriginIndexes = new Set(
-            data.datasets.map((dataset) => dataset.originIndex)
-        );
+        const representedOriginIndexes = new Set(data.datasets.map((dataset) => dataset.originIndex));
         let addNoDataToLegend = false;
         const fakeData = new Array(data.labels.length + 1);
         fakeData[data.labels.length] = 1;
@@ -430,36 +414,23 @@ export class GanttRenderer extends Component {
      */
     getScaleOptions() {
         const {
-            allIntegers,
-            fields,
-            groupBy,
-            measure,
-            measures,
-            mode,
-            stacked,
+            allIntegers, fields, groupBy, measure, measures, mode, stacked,
         } = this.model.metaData;
         if (mode === "pie") {
             return {};
         }
         const xAxe = {
-            type: "category",
-            scaleLabel: {
+            type: "category", scaleLabel: {
                 display: Boolean(groupBy.length),
                 labelString: groupBy.length ? fields[groupBy[0].fieldName].string : "",
-            },
-            ticks: { callback: (value) => shortenLabel(value) },
+            }, ticks: { callback: (value) => shortenLabel(value) },
         };
         const yAxe = {
-            type: "linear",
-            scaleLabel: {
+            type: "linear", scaleLabel: {
                 labelString: measures[measure].string,
-            },
-            ticks: {
-                callback: (value) => this.formatValue(value, allIntegers),
-                suggestedMax: 0,
-                suggestedMin: 0,
-            },
-            stacked: mode === "line" && stacked ? stacked : undefined,
+            }, ticks: {
+                callback: (value) => this.formatValue(value, allIntegers), suggestedMax: 0, suggestedMin: 0,
+            }, stacked: mode === "line" && stacked ? stacked : undefined,
         };
         return { xAxes: [xAxe], yAxes: [yAxe] };
     }
@@ -514,8 +485,7 @@ export class GanttRenderer extends Component {
         const { data, metaData } = this.model;
         const { mode } = metaData;
         const tooltipOptions = {
-            enabled: false,
-            custom: this.customTooltip.bind(this, data, metaData),
+            enabled: false, // custom: this.customTooltip.bind(this, data, metaData),
         };
         if (mode === "line") {
             tooltipOptions.mode = "index";
@@ -547,7 +517,7 @@ export class GanttRenderer extends Component {
      * @param {Object} legendItem
      */
     onLegendClick(ev, legendItem) {
-        this.removeTooltips();
+        // this.removeTooltips();
         // Default 'onClick' fallback. See web/static/lib/Chart/Chart.js#15138
         const index = legendItem.datasetIndex;
         const meta = this.chart.getDatasetMeta(index);
@@ -576,14 +546,13 @@ export class GanttRenderer extends Component {
         }
         const viewContentTop = this.rootRef.el.getBoundingClientRect().top;
         const legendTooltip = Object.assign(document.createElement("div"), {
-            className: "o_tooltip_legend popover p-3 pe-none",
-            innerText: fullText,
+            className: "o_tooltip_legend popover p-3 pe-none", innerText: fullText,
         });
         legendTooltip.style.top = `${ev.clientY - viewContentTop}px`;
         legendTooltip.style.maxWidth = getMaxWidth(this.chart.chartArea);
         this.containerRef.el.appendChild(legendTooltip);
-        this.fixTooltipLeftPosition(legendTooltip, ev.clientX);
-        this.legendTooltip = legendTooltip;
+        // this.fixTooltipLeftPosition(legendTooltip, ev.clientX);
+        // this.legendTooltip = legendTooltip;
     }
 
     /**
@@ -592,7 +561,7 @@ export class GanttRenderer extends Component {
      */
     onLegendLeave() {
         this.canvasRef.el.style.cursor = "";
-        this.removeLegendTooltip();
+        // this.removeLegendTooltip();
     }
 
     /**
@@ -603,11 +572,10 @@ export class GanttRenderer extends Component {
     prepareOptions() {
         const { disableLinking, mode } = this.model.metaData;
         const options = {
-            maintainAspectRatio: false,
-            scales: this.getScaleOptions(),
-            legend: this.getLegendOptions(),
-            tooltips: this.getTooltipOptions(),
-            elements: this.getElementOptions(),
+            maintainAspectRatio: false, // scales: this.getScaleOptions(),
+            // legend: this.getLegendOptions(),
+            // tooltips: this.getTooltipOptions(),
+            // elements: this.getElementOptions(),
         };
         if (!disableLinking && mode !== "line") {
             options.onClick = this.onGraphClicked.bind(this);
@@ -633,7 +601,15 @@ export class GanttRenderer extends Component {
             this.tooltip.remove();
             this.tooltip = null;
         }
-        this.removeLegendTooltip();
+        // this.removeLegendTooltip();
+    }
+
+    checkDefaultScale() {
+        if (this.model.metaData.resModel === 'project.task') {
+            return JSON.parse(sessionStorage.getItem("project" + this.model.metaData.context.active_id)) || "month";
+        } else if (this.model.metaData.resModel === 'project.project') {
+            return JSON.parse(sessionStorage.getItem("projects_view")) || "month";
+        }
     }
 
     /**
@@ -641,102 +617,275 @@ export class GanttRenderer extends Component {
      * the current config.
      */
     renderChart() {
-
-        gantt.config.order_branch = true;
-        gantt.config.order_branch_free = true;
-        gantt.config.open_tree_initially = true;
         gantt.config.date_format = "%Y-%m-%d %H:%i";
-
         this.dataProcessor = gantt.createDataProcessor(this.model.config);
+        gantt.serverList("users", this.model.all_user_names);
+        gantt.config.auto_types = true;
+        // const t = this
+        // gantt.attachEvent("onTaskDblClick", function (id, e) {
+        //     var task = gantt.getTask(id);
+        //     if(task.type !==  "milestone"){
+        //          t.onGraphClicked(Number(id))
+        //     return false;
+        //     }
+        // });
 
-        const t = this
-        gantt.attachEvent("onTaskDblClick", function (id, task) {
-            console.log(id)
-            t.onGraphClicked(Number(id))
-            return false;
-        });
-
-        var zoomConfig = {
-            levels: [
-                {
-                    name: "day",
-                    scale_height: 27,
-                    min_column_width: 80,
-                    scales: [
-                        { unit: "day", step: 1, format: "%d %M" }
-                    ]
-                },
-                {
-                    name: "week",
-                    scale_height: 50,
-                    min_column_width: 50,
-                    scales: [
-                        {
-                            unit: "week", step: 1, format: function (date) {
-                                var dateToStr = gantt.date.date_to_str("%d %M");
-                                var endDate = gantt.date.add(date, -6, "day");
-                                var weekNum = gantt.date.date_to_str("%W")(date);
-                                return "#" + weekNum + ", " + dateToStr(date) + " - " + dateToStr(endDate);
-                            }
-                        },
-                        { unit: "day", step: 1, format: "%j %D" }
-                    ]
-                },
-                {
-                    name: "month",
-                    scale_height: 50,
-                    min_column_width: 120,
-                    scales: [
-                        { unit: "month", format: "%F, %Y" },
-                        { unit: "week", format: "Week #%W" }
-                    ]
-                },
-                {
-                    name: "quarter",
-                    height: 50,
-                    min_column_width: 90,
-                    scales: [
-                        { unit: "month", step: 1, format: "%M" },
-                        {
-                            unit: "quarter", step: 1, format: function (date) {
-                                var dateToStr = gantt.date.date_to_str("%M");
-                                var endDate = gantt.date.add(gantt.date.add(date, 3, "month"), -1, "day");
-                                return dateToStr(date) + " - " + dateToStr(endDate);
-                            }
+        // create multiselect from chosen library
+        gantt.form_blocks["multiselect"] = {
+            render: function (sns) {
+                var height = (sns.height || "23") + "px";
+                var width = "548px";
+                var html = "<div class='gantt_cal_ltext gantt_cal_chosen gantt_cal_multiselect' style='height:" + height + "; width:" + width + ";'><select data-placeholder='...' class='chosen-select' multiple>";
+                if (sns.options) {
+                    for (var i = 0; i < sns.options.length; i++) {
+                        if (sns.unassigned_value !== undefined && sns.options[i].key == sns.unassigned_value) {
+                            continue;
                         }
-                    ]
-                },
-                {
-                    name: "year",
-                    scale_height: 50,
-                    min_column_width: 30,
-                    scales: [
-                        { unit: "year", step: 1, format: "%Y" }
-                    ]
+                        html += "<option value='" + sns.options[i].key + "'>" + sns.options[i].label + "</option>";
+                    }
                 }
-            ]
+                html += "</select></div>";
+                return html;
+            },
+
+            set_value: function (node, value, ev, sns) {
+                node.style.overflow = "visible";
+                node.parentNode.style.overflow = "visible";
+                node.style.display = "inline-block";
+                var select = $(node.firstChild);
+
+                if (value) {
+                    value = (value + "").split(",");
+                    select.val(value);
+                } else {
+                    select.val([]);
+                }
+
+                select.chosen();
+                if (sns.onchange) {
+                    select.change(function () {
+                        sns.onchange.call(this);
+                    })
+                }
+                select.trigger('chosen:updated');
+                select.trigger("change");
+            },
+
+            get_value: function (node, ev) {
+                var value = $(node.firstChild).val();
+                return value;
+            },
+
+            focus: function (node) {
+                $(node.firstChild).focus();
+            }
         };
 
 
-        gantt.ext.zoom.init(zoomConfig);
-        gantt.ext.zoom.setLevel("quarter");
+        let zoomConfig = {
+            levels: [
+                { name: "day", scale_height: 27, min_column_width: 80, scales: [{ unit: "day", step: 1, format: "%d %M" }]},
+                { name: "week", scale_height: 50, min_column_width: 50, scales: [{
+                    unit: "week", step: 1, format: function (date) {
+                        let dateToStr = gantt.date.date_to_str("%d %M");
+                        let endDate = gantt.date.add(date, -6, "day");
+                        let weekNum = gantt.date.date_to_str("%W")(date);
+                        return "#" + weekNum + ", " + dateToStr(date) + " - " + dateToStr(endDate);
+                    }
+                },
+                { unit: "day", step: 1, format: "%j %D" }]},
 
-        const { data } = this.model;
-        gantt.init("gantt_here");
-        gantt.clearAll();
-        gantt.parse(data);
+                { name: "month",
+                scale_height: 50,
+                min_column_width: 120,
+                scales: [{ unit: "month", format: "%F, %Y" }, { unit: "week", format: "Week #%W" }]
+                },
+                { name: "quarter", height: 50, min_column_width: 90, scales: [{ unit: "month", step: 1, format: "%M" }, {
+                    unit: "quarter", step: 1, format: function (date) {
+                        let dateToStr = gantt.date.date_to_str("%M");
+                        let endDate = gantt.date.add(gantt.date.add(date, 3, "month"), -1, "day");
+                        return dateToStr(date) + " - " + dateToStr(endDate);
+                    }
+                }]
+                }, {
+                name: "year", scale_height: 50, min_column_width: 30, scales: [{ unit: "year", step: 1, format: "%Y" }]
+                }]
+        };
 
-        gantt.config.sort = true; // Enable sorting on each columns
-        gantt.sort("start_date", false) // the sorting direction: true - descending, false - ascending
+        let model_type = 0
+        gantt.config.types.custom_projects = "custom_project";
+        gantt.locale.labels.section_title = "Project Name";
+        gantt.locale.labels.section_owner = "Assignees";
+        gantt.locale.labels.section_task = "Task Name";
+        gantt.locale.labels.section_project = "Project Name";
+        gantt.locale.labels.section_milestone = "Milestone Name";
+        gantt.locale.labels.confirm_deleting = "It will be deleted permanently, are you sure?";
 
-        gantt.config.drag_progress = false;
+        gantt.attachEvent("onAfterTaskAdd", function (id, item) {
+            gantt.sort("start_date", false)
+        });
+
+        gantt.attachEvent("onBeforeTaskAdd", function (id, item) {
+            if (model_type === 1) {
+                item.model = "project.task"
+                item.type = "task"
+                item.open = false
+            } else if (model_type === 2) {
+                item.model = "project.project"
+                item.type = "custom_project"
+            }
+            return true;
+        });
+
+        let opened_ids = JSON.parse(sessionStorage.getItem("opened_tasks")) || [];
+        gantt.attachEvent("onTaskOpened", function (id) {
+            opened_ids.push(id);
+            sessionStorage.setItem("opened_tasks", JSON.stringify(opened_ids));
+        });
+
+        gantt.attachEvent("onTaskClosed", function (id) {
+            let closed_ids = JSON.parse(sessionStorage.getItem("opened_tasks")) || [];
+            let index = closed_ids.indexOf(id);
+            if (index > -1) {
+                closed_ids.splice(index, 1);
+                opened_ids.splice(index, 1)
+            }
+            sessionStorage.setItem("opened_tasks", JSON.stringify(closed_ids))
+        });
+
+        gantt.attachEvent("onBeforeTaskDrag", function (id, mode, e) {
+            var task = gantt.getTask(id)
+            if (mode === "resize" || mode === "move") {
+                if (task.type === 'task' || task.type === 'milestone') {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        });
+
+        gantt.attachEvent("onBeforeTaskMove", function (id, parent, tindex) {
+            let task_type = gantt.getTask(id).type;
+            if (parent) {
+                let parent_type = gantt.getTask(parent).type;
+                if (parent_type === 'milestone') {
+                    return false
+                }
+            } else if (task_type === "milestone") {
+                return false;
+            } else {
+                return true;
+            }
+
+        });
+
+        gantt.attachEvent("onBeforeRowDragEnd", function (id, parent, tindex) {
+            let task_type = gantt.getTask(id).type;
+            if (parent) {
+                let parent_type = gantt.getTask(parent).type;
+                if (parent_type === "milestone") {
+                    return false
+                }
+            } else if (task_type === "milestone") {
+                return false;
+            } else {
+                return true;
+            }
+        });
+
+         gantt.templates.grid_row_class = function (start, end, task) {
+            if (task.model === 'project.project' || task.type === 'milestone') {
+                return "nested_task"
+            }
+            return "";
+        };
+
+        gantt.templates.task_class = function (start, end, task) {
+            if (task.type == gantt.config.types.custom_projects) {
+                return "custom_project";
+            }
+            if(task.type == gantt.config.types.milestone_sections){
+                    return "gantt_duration"
+            }
+            return "";
+        };
 
         gantt.templates.rightside_text = function (start, end, task) {
             if (task.type == gantt.config.types.milestone) {
                 return task.text;
             }
+            if (task.model == 'project.task') {
+                return task.user;
+            }
             return "";
         };
+
+        gantt.templates.progress_text = function (start, end, task) {
+            return "<span style='margin-left: 10px;'>" + Math.round(task.progress * 100) + "% </span>";
+        };
+
+        gantt.config.lightbox.custom_projects_sections = [
+            { name: "title", height: 70, map_to: "text", type: "textarea", focus: true},
+            { name: "time", type: "duration", readonly: true, map_to:"auto" }];
+
+        gantt.config.lightbox.project_sections = [
+            { name: "task", height: 70, map_to: "text", type: "textarea", focus: true },
+            { name: "owner", height: 60, type: "multiselect", options: gantt.serverList("users"), map_to: "multiple_asssign"},
+            { name: "time", type: "duration", readonly: true, map_to: "auto" }];
+
+        gantt.config.lightbox.milestone_sections = [
+            { name: "milestone", height: 70, map_to: "text", type: "textarea", focus: true },
+            { name: "time", type: "duration", map_to: "auto" , single_date: true}];
+
+        if (this.model.metaData.resModel === "project.task") {
+            gantt.config.order_branch = true;
+            gantt.config.order_branch_free = true;
+            model_type = 1
+
+            gantt.config.lightbox.sections = [
+                { name: "task", height: 70, map_to: "text", type: "textarea", focus: true},
+                {name: "owner", height: 60, type: "multiselect", options: gantt.serverList("users"), map_to: "multiple_asssign"},
+                { name: "time", type: "duration", map_to: "auto" }
+            ]
+
+            gantt.config.columns = [
+                { name: "user", label: "Assignees", width: '200', resize: true, align: "left" },
+                { name: "text", label: "Task Name", width: '300', resize: true, align: "left", tree: true},
+                { name: "start_date", label: "Start Date", align: "center", width: 130, resize: true },
+                { name: "duration", align: "center", width: 50, resize: true},
+                { name: "add", width: 30}
+            ];
+        }
+
+        if (this.model.metaData.resModel === "project.project") {
+            gantt.config.order_branch = false;
+            gantt.config.order_branch_free = false;
+            model_type = 2
+            gantt.config.lightbox.sections = [
+                { name: "project", height: 70, map_to: "text", type: "textarea", focus: true },
+                { name: "time", type: "duration", readonly: true, map_to: "auto" }
+            ];
+            gantt.config.columns = [
+                { name: "text", label: "Project", width: '170', resize: true, align: "center"},
+                { name: "start_date", label: "Start Date", align: "center", width: 110, resize: true },
+                { name: "duration", align: "center", width: 50, resize: true},
+                { name: "add", width: 30}
+            ];
+        }
+
+        gantt.ext.zoom.init(zoomConfig);
+        gantt.ext.zoom.setLevel(this.checkDefaultScale());
+        const { data } = this.model;
+        gantt.init("gantt_here");
+        gantt.clearAll();
+        gantt.parse(data);
+        gantt.config.sort = true; // Enable sorting on each columns
+        gantt.sort("start_date", false) // the sorting direction: true - descending, false - ascending
+        gantt.config.drag_progress = false;
+
+        if (this.model.metaData.resModel === "project.task") {
+            gantt.config.grid_width = 460;
+        }
     }
 }
 
