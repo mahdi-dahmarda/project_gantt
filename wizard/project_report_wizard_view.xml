@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="project_date_report_form_view_wizard" model="ir.ui.view">
+        <field name="name">Project Report</field>
+        <field name="model">project.date.report.wizard</field>
+        <field name="arch" type="xml">
+            <form class="project_report_based_date">
+                <script>
+                    $(document).ready(function(){
+                    $('.modal-content').css({'width': '700px', 'left':'166px'});
+                    $('.oe_form_sheet_width').css({'max-width': '700px'});
+                    });
+                </script>
+                <group>
+                    <group>
+                        <field name="wizard_display_project_id" required="True"/>
+                    </group>
+                    <group>
+                        <field name="from_date" required="True"/>
+                        <field name="to_date" required="True"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_print_report" type="object" string="Print" class="btn-primary"/>
+                    <button special="cancel" class="btn-secondary" string="Cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_project_report_dates" model="ir.actions.act_window">
+        <field name="name">Project Report</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">project.date.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

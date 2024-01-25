@@ -60,16 +60,45 @@
         <field name="view_mode">kanban,tree,form,calendar,pivot,graph,activity,gantt</field>
     </record>
 
+    <record id="project_task_form_add_many2many_fields" model="ir.ui.view">
+        <field name="name">project.task.date.start</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user_ids']" position="after">
+                <field name="project_manager" widget="many2many_avatar_user"/>
+                <field name="technical_manager" widget="many2many_avatar_user"/>
+                <field name="program_director" widget="many2many_avatar_user"/>
+            </xpath>
+        </field>
+    </record>
+
     <record id="project_task_form_add_date_start_field" model="ir.ui.view">
-            <field name="name">project.task.date.start</field>
-            <field name="model">project.task</field>
-            <field name="inherit_id" ref="project.view_task_form2"/>
-            <!-- <field name="mode">primary</field> -->
-            <field name="arch" type="xml">
-                <xpath expr="//field[@name='date_deadline']" position="before">
-                    <field name="date_start"/>
-                </xpath>
-            </field>
-        </record>
+        <field name="name">project.task.date.start</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="date_start"/>
+            </xpath>
+             <xpath expr="//field[@name='date_deadline']" position="replace">
+                <field name="date_deadline"/>
+            </xpath>
+        </field>
+    </record>
+
+    <menuitem
+        id="report_project_dates"
+        name="Project Report"
+        parent="project.menu_project_report"
+        action="action_project_report_dates"
+        sequence="1"/>
+
+<!--    <menuitem id="menu_project_config" name="Configuration" parent="menu_main_pm"-->
+<!--            sequence="100" groups="project.group_project_manager"/>-->
+
+<!--    <record id="project.menu_project_config" model="ir.ui.menu">-->
+<!--        <field name="name">Configuration Signs</field>-->
+<!--    </record>-->
 
 </odoo>

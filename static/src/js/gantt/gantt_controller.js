@@ -120,13 +120,6 @@ export class GanttController extends Component {
     /**
      * @param {"day"|"week"|"month"|"quarter"|"year"} scale
      */
-    // onScaleSelected(scale) {
-    //     this.scale = scale;
-    //     gantt.ext.zoom.setLevel(scale);
-    //
-    //
-    // }
-
     /**
      * @param {"ASC"|"DESC"} order
      */

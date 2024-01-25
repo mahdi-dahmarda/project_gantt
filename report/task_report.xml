@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_timesheet.timesheet_report_task" model="ir.actions.report">
+        <field name="name">Task Report</field>
+    </record>
+
+    <template id="task_report_inherited" inherit_id="hr_timesheet.timesheet_table">
+        <xpath expr="//th[span[text()='Date']]" position="replace">
+            <th class="text-start align-middle">
+                <span>No.</span>
+            </th>
+        </xpath>
+        <xpath expr="//th[span[text()='Description']]" position="after">
+            <th class="text-start align-middle">
+                <span>Date</span>
+            </th>
+        </xpath>
+
+        <xpath expr="//span[@t-field='line.date']" position="replace">
+            <span t-esc="line_index + 1"/>
+        </xpath>
+        <xpath expr="//span[@t-field='line.name']" position="after">
+            <td class="align-middle">
+                <span t-field="line.date"/>
+            </td>
+        </xpath>
+        <xpath expr="//tr/t[@t-set='nbCols'][1]" position="replace">
+            <t t-set="nbCols" t-value="5"/>
+        </xpath>
+    </template>
+
+    <template id="report_timesheet_inherited_for_task" inherit_id="hr_timesheet.timesheet_project_task_page">
+        <xpath expr="//t[@t-call='web.external_layout']" position="replace">
+            <t t-call="project_gantt.custom_header_footer">
+                <div class="page">
+                    <t t-foreach="docs" t-as="doc">
+                        <t t-set="task_preview" t-value="bool(doc._name == 'project.task')"/>
+                        <!--                <t t-set="show_project" t-value="len(docs.project_id) > 1"/>-->
+                        <t t-if="task_preview">
+                            <h2 class="text-center">Form Report</h2>
+                            <div class="row col-12" style="height:auto;">
+                                <div class="col-7">
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Project Name:</span>
+                                        <span t-field="doc.project_id.name" class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Task Name:</span>
+                                        <span t-field="doc.name" class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Task Type:</span>
+                                        <span t-field="doc.tag_ids" class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Assignees:</span>
+                                        <span t-field="doc.user_ids" class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2" style="padding:2px;">
+                                        <span class="">Customer:</span>
+                                        <span t-field="doc.partner_id" class="ps-2"></span>
+                                    </div>
+                                </div>
+                                <div class="col-5">
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Start Date:</span>
+                                        <span t-field="doc.date_start" class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Deadline:</span>
+                                        <span t-field="doc.date_deadline"
+                                              class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Project Manager:</span>
+                                        <span t-field="doc.project_manager"
+                                              class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Technical Manager:</span>
+                                        <span t-field="doc.technical_manager"
+                                              class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2" style="padding:2px;">
+                                        <span class="">Program Director:</span>
+                                        <span t-field="doc.program_director"
+                                              class="ps-2"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+
+                        <t t-if="from_project" t-set="show_task" t-value="bool(doc.timesheet_ids.task_id)"/>
+                        <div class="oe_structure"/>
+                        <div class="row mt-4" >
+                            <div class="col-12">
+                                <t t-if="doc.allow_timesheets and doc.timesheet_ids">
+                                    <h1 class="my-4">
+                                        <t t-if="not show_record">
+                                            <t t-out="title"/>:
+                                            <span t-field="doc.name"/>
+                                        </t>
+                                    </h1>
+                                    <h4>
+                                        <span>Timesheets
+                                            <t t-if="show_record">
+                                                for the
+                                                <t t-out="doc.name"/>
+                                                <t t-out="title"/>
+                                            </t>
+                                        </span>
+                                    </h4>
+                                    <t t-set='lines' t-value='doc.timesheet_ids'/>
+                                    <t t-call="hr_timesheet.timesheet_table"/>
+                                </t>
+                            </div>
+                        </div>
+
+                        <t t-if="task_preview">
+                            <div class="mt-2 col-12">
+
+                                <t t-if="doc.get_technical_manager_remarks()">
+                                    <t t-set="technical_manager_remarks" t-value="doc.get_technical_manager_remarks()"/>
+                                    <div class="mt-4 border border-2" style="padding: 10px; min-height:100px; max-height:auto;">
+                                        <h4>Technical Manager Remarks</h4>
+                                        <t t-foreach="technical_manager_remarks" t-as="remark">
+                                            <div class="d-flex justify-content-start">
+                                                <span class="me-2"><t t-esc="remark_index + 1"/>.</span><span t-esc="remark"></span>
+                                            </div>
+                                        </t>
+                                        <div t-field="doc.technical_manager" class="pt-2"></div>
+                                    </div>
+                                </t>
+
+                                <t t-if="doc.get_customer_remarks()">
+                                    <t t-set="customer_remarks" t-value="doc.get_customer_remarks()"/>
+                                    <div class="mt-4 border border-2" style="padding: 10px; min-height:100px; max-height:auto;">
+                                        <h4>Customer Remarks</h4>
+<!--                                        <t t-foreach="customer_remarks" t-as="customer_remark">-->
+<!--                                            <div class="d-flex justify-content-start">-->
+<!--                                                <span class="me-2"><t t-esc="customer_remark + 1"/>.</span><span t-esc="customer_remark"></span>-->
+<!--                                            </div>-->
+<!--                                        </t>-->
+                                        <div t-field="doc.partner_id" class="pt-2"></div>
+                                    </div>
+                                </t>
+
+                            </div>
+                        </t>
+
+                    </t>
+                </div>
+            </t>
+        </xpath>
+    </template>
+
+    <!--    <template id="report_task_report">-->
+    <!--        <t t-call="web.html_container">-->
+    <!--            <t t-call="hr_timesheet.report_project_task_timesheet" />-->
+
+    <!--        </t>-->
+    <!--    </template>-->
+
+</odoo>

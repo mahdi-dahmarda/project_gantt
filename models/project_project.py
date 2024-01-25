@@ -1,8 +1,9 @@
 from odoo import models, fields, api
+from odoo.http import request
+# from collections import Counter
 
 class ProjectProject(models.Model):
     _inherit = "project.project"
-
     # Add computed fields for start and end dates
     exact_start_date = fields.Date(string='EStart Date', compute='_compute_exact_start_date', default=fields.Date.today())
     exact_end_date = fields.Date(string='EEnd Date', compute='_compute_exact_end_date', default=fields.Date.today())
@@ -32,7 +33,7 @@ class ProjectProject(models.Model):
             else:
                 project.exact_end_date = None
 
-    @api.depends('tasks.progress')
+    @api.onchange('task.progress')
     def _compute_project_progress(self):
         for project in self:
             planned_hours = 0
@@ -52,3 +53,35 @@ class ProjectProject(models.Model):
                             planned_hours + subtask_planned_hours) * 100
             else:
                 project.project_progress = 0.0
+
+    @api.model
+    def get_all_task_report(self):
+        company_working_hours = self.env.user.company_id.resource_calendar_id.hours_per_day
+        is_uom_day = request.env['account.analytic.line']._is_timesheet_encode_uom_day()
+        task_data = []
+        for task in self.tasks:
+            duration = 0
+            if is_uom_day:
+                duration = round(task.planned_hours / company_working_hours, 2)
+            else:
+                duration = task.planned_hours
+            task_data.append({
+                "name": task.name,
+                "assignees": ', '.join(task.user_ids.mapped('name')),
+                "stage": task.stage_id.name,
+                "duration": duration,
+            })
+        return task_data
+
+    def get_task_count(self):
+        return len(self.tasks)
+
+    def count_task_stages(self):
+        task_stage_counts = {}
+        for task in self.tasks:
+            stage = task.stage_id.name
+            if stage in task_stage_counts:
+                task_stage_counts[stage] += 1
+            else:
+                task_stage_counts[stage] = 1
+        return task_stage_counts

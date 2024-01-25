@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="project_gantt.action_request_project_task" model="ir.actions.report">
+        <field name="name">Task Request</field>
+        <field name="model">project.task</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">project_gantt.report_task_request</field>
+        <field name="report_file">project_gantt.report_task_request</field>
+        <field name="binding_model_id" ref="model_project_task"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_task_request">
+        <t t-call="web.html_container">
+            <t t-call="project_gantt.custom_header_footer">
+                <div class="page">
+                    <h2 class="text-center">Form Request</h2>
+                    <t t-foreach="docs" t-as="task">
+                        <t t-if="len(task.ids) == 1">
+                            <div class="row col-12" style="height:auto;">
+                                <div class="col-7">
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Project Name:</span>
+                                        <span t-field="task.project_id.name"
+                                              class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Task Name:</span>
+                                        <span t-field="task.name" class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Task Type:</span>
+                                        <span t-field="task.tag_ids" class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Assignees:</span>
+                                        <span t-field="task.user_ids" class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2" style="padding:2px;">
+                                        <span class="">Customer:</span>
+                                        <span t-field="task.partner_id" class="ps-2"></span>
+                                    </div>
+                                </div>
+                                <div class="col-5">
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Start Date:</span>
+                                        <span t-field="task.date_start" class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Deadline:</span>
+                                        <span t-field="task.date_deadline"
+                                              class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Project Manager:</span>
+                                        <span t-field="task.project_manager"
+                                              class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                        <span class="">Technical Manager:</span>
+                                        <span t-field="task.technical_manager"
+                                              class="ps-2"></span>
+                                    </div>
+                                    <div class="border border-2" style="padding:2px;">
+                                        <span class="">Program Director:</span>
+                                        <span t-field="task.program_director"
+                                              class="ps-2"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-2 col-12">
+                                <t t-if="task.description">
+                                    <div class="mt-4 border border-2"
+                                         style="padding: 10px; min-height:150px; max-height:auto;">
+                                        <h4>Task Description:</h4>
+                                        <div t-field="task.description" class="ps-2"></div>
+                                        <div t-field="task.partner_id"></div>
+                                    </div>
+                                </t>
+
+                                <t t-if="task.get_project_manager_remarks()">
+                                    <t t-set="project_manager_remarks" t-value="task.get_project_manager_remarks()"/>
+                                    <div class="mt-4 border border-2"
+                                         style="padding: 10px; min-height:100px; max-height:auto;">
+                                        <h4>Project Manager Remarks</h4>
+                                        <t t-foreach="project_manager_remarks" t-as="remark">
+                                            <div class="d-flex justify-content-start">
+                                                <span class="me-2"><t t-esc="remark_index + 1"/>.
+                                                </span>
+                                                <span t-esc="remark"></span>
+                                            </div>
+                                        </t>
+                                        <div t-field="task.project_manager" class="pt-2"></div>
+                                    </div>
+                                </t>
+
+                                <t t-if="task.get_technical_manager_remarks()">
+                                    <t t-set="technical_manager_remarks"
+                                       t-value="task.get_technical_manager_remarks()"/>
+                                    <div class="mt-4 border border-2"
+                                         style="padding: 10px; min-height:100px; max-height:auto;">
+                                        <h4>Technical Manager Remarks</h4>
+                                        <t t-foreach="technical_manager_remarks" t-as="remark">
+                                            <div class="d-flex justify-content-start">
+                                                <span class="me-2"><t t-esc="remark_index + 1"/>.
+                                                </span>
+                                                <span t-esc="remark"></span>
+                                            </div>
+                                        </t>
+                                        <div t-field="task.technical_manager" class="pt-2"></div>
+                                    </div>
+                                </t>
+
+                                <t t-if="task.get_program_director_remarks()">
+                                    <t t-set="program_director_remarks" t-value="task.get_program_director_remarks()"/>
+                                    <div class="mt-4 border border-2"
+                                         style="padding: 10px; min-height:100px; max-height:auto;">
+                                        <h4>Program Director Remarks</h4>
+                                        <t t-foreach="program_director_remarks" t-as="remark">
+                                            <div class="d-flex justify-content-start">
+                                                <span class="me-2"><t t-esc="remark_index + 1"/>.
+                                                </span>
+                                                <span t-esc="remark"></span>
+                                            </div>
+                                        </t>
+                                        <div t-field="task.program_director" class="pt-2"></div>
+                                    </div>
+                                </t>
+
+                            </div>
+                        </t>
+                    </t>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

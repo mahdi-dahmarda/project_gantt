@@ -771,7 +771,8 @@ export class GanttRenderer extends Component {
                 if (parent_type === 'milestone') {
                     return false
                 }
-            } else if (task_type === "milestone") {
+            }
+            if (task_type === "milestone") {
                 return false;
             } else {
                 return true;
@@ -786,7 +787,7 @@ export class GanttRenderer extends Component {
                 if (parent_type === "milestone") {
                     return false
                 }
-            } else if (task_type === "milestone") {
+            } if (task_type === "milestone") {
                 return false;
             } else {
                 return true;
@@ -820,8 +821,8 @@ export class GanttRenderer extends Component {
             return "";
         };
 
-        gantt.templates.progress_text = function (start, end, task) {
-            return "<span style='margin-left: 10px;'>" + Math.round(task.progress * 100) + "% </span>";
+        gantt.templates.task_text = function (start, end, task) {
+            return task.text + "<span style='margin-left: 10px;'>" + "(" +Math.round(task.progress * 100) + "% )</span>";
         };
 
         gantt.config.lightbox.custom_projects_sections = [
@@ -849,10 +850,10 @@ export class GanttRenderer extends Component {
             ]
 
             gantt.config.columns = [
-                { name: "user", label: "Assignees", width: '200', resize: true, align: "left" },
-                { name: "text", label: "Task Name", width: '300', resize: true, align: "left", tree: true},
-                { name: "start_date", label: "Start Date", align: "center", width: 130, resize: true },
-                { name: "duration", align: "center", width: 50, resize: true},
+                { name: "user", label: "Assignees", width: '200', align: "left" },
+                { name: "text", label: "Task Name", width: '300', align: "left", tree: true},
+                { name: "start_date", label: "Start Date", align: "center", width: 130},
+                { name: "duration", align: "center", width: 50},
                 { name: "add", width: 30}
             ];
         }
@@ -866,9 +867,9 @@ export class GanttRenderer extends Component {
                 { name: "time", type: "duration", readonly: true, map_to: "auto" }
             ];
             gantt.config.columns = [
-                { name: "text", label: "Project", width: '170', resize: true, align: "center"},
-                { name: "start_date", label: "Start Date", align: "center", width: 110, resize: true },
-                { name: "duration", align: "center", width: 50, resize: true},
+                { name: "text", label: "Project", width: '170',align: "center"},
+                { name: "start_date", label: "Start Date", align: "center", width: 110},
+                { name: "duration", align: "center", width: 50},
                 { name: "add", width: 30}
             ];
         }

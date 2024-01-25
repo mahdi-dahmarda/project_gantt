@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_project_report_date_based" model="ir.actions.report">
+        <field name="name">Project Report</field>
+        <field name="model">project.date.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">project_gantt.report_project_report_date_based</field>
+        <field name="report_file">project_gantt.report_project_report_date_based</field>
+        <field name="binding_model_id" ref="model_project_date_report_wizard"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_project_report_date_based">
+        <t t-call="web.html_container">
+            <t t-call="project_gantt.custom_header_footer">
+                <div class="page">
+                    <h2 class="text-center">Project Report</h2>
+                    <div class="row col-12" style="height:auto;">
+                        <div class="col-7">
+                            <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                <span class="">Project Name:</span>
+                                <span t-esc="project_name" class="ps-2"></span>
+                            </div>
+
+                            <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                <span class="">Project Stage:</span>
+                                <span t-esc="project_stage" class="ps-2"></span>
+                            </div>
+
+                            <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                <span class="">Project Progress:</span>
+                                <span t-esc="project_progres" class="ps-2"></span>
+                            </div>
+                            <div class="border border-2" rowspan="3" style="padding:2px;">
+                                <span class="">Total Tasks:</span>
+                                <span t-esc="tasks_length" class="ps-2"></span>
+                            </div>
+                        </div>
+                        <div class="col-5">
+                            <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                <span class="">Project Manager:</span>
+                                <span t-esc="user_id" class="ps-2"></span>
+                            </div>
+                            <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                <span class="">Customer:</span>
+                                <span t-esc="partner_id" class="ps-2"></span>
+                            </div>
+                            <div class="border border-2 border-bottom-0" style="padding:2px;">
+                                <span class="">From:</span>
+                                <span t-esc="from_date" class="ps-2"></span>
+                            </div>
+                            <div class="border border-2" style="padding:2px;">
+                                <span class="">To:</span>
+                                <span t-esc="to_date" class="ps-2"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 col-12">
+                        <h4>Tasks for the
+                            <t t-esc="project_name"/>
+                        </h4>
+                        <div class="row">
+                            <div class="col-12">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-start align-middle">
+                                                <span>No.</span>
+                                            </th>
+                                            <th class="text-start align-middle">
+                                                <span>Task Name</span>
+                                            </th>
+                                            <th class="text-start align-middle">
+                                                <span>Assignees</span>
+                                            </th>
+                                            <th class="text-start align-middle">
+                                                <span>Duration</span>
+                                            </th>
+                                            <th class="text-end">
+                                                <span>Stage</span>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-set="project_task" t-value="total_tasks"/>
+                                        <tr t-foreach="project_task" t-as="task"
+                                            t-att-style="'background-color: #F1F1F1;' if task_index % 2 == 0 else ''">
+                                            <td class="align-middle">
+                                                <span t-esc="task_index + 1"/>
+                                            </td>
+                                            <td class="align-middle">
+                                                <span t-esc="task['name']"></span>
+                                            </td>
+                                            <td class="align-middle">
+                                                <span t-esc="task['assignees']"></span>
+                                            </td>
+                                            <td class="align-middle">
+                                                <span t-esc="task['duration']"></span>
+                                            </td>
+                                            <td class="align-middle">
+                                                <span t-esc="task['stage']"></span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

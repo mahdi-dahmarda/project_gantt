@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="project_gantt.custom_header_footer">
+        <div class="header">
+            <div class="row" style="margin-top:-10px;">
+                <span class="col-6 d-flex justify-content-start" >
+                    <img src='/project_gantt/static/description/mcit_pic.jpg' style="height: 90px; width: 90px;"/>
+                    <span class="ms-4 text-center" style="">
+                        <p>امارت اسلامی افغانستان<br></br>وزارت مخابرات و تکنالوژی معلوماتی
+                        </p>
+                    </span>
+                </span>
+
+                <span class="col-6 d-flex justify-content-end">
+                    <span class="me-4 text-center" style="">
+                        <p>د افغانستان اسلامي امارت<br></br>د مخابراتو او معلوماتی تکنالوجی وزارت
+                        </p>
+                    </span>
+                    <img src='/project_gantt/static/description/amarat_pic.jpg' style="height: 80px; width: 80px;"/>
+                </span>
+            </div>
+            <div class="row text-center d-flex" style="margin-top:-50px;">
+                <p>معینیت تخنیکی و پالیسی
+                    <br></br>
+                    ریاست عمومی حکومت‌داری دیجیتلی
+                    <br></br>
+                    ریاست سیستم سازی
+                    <br></br>
+                    مدیریت اجرائیه
+                </p>
+            </div>
+                <p class="text-end" style="margin-top:-45px;">شماره مسلسل</p>
+                <p class="text-end pb-2" style="margin-top:-20px; border-bottom:2px solid lightgray;">تاریخ</p>
+        </div>
+
+        <div class="footer o_standard_footer">
+            <div class="row">
+                <span class="col-6 d-flex justify-content-start">Tel: 020-2106441</span>
+                <span class="col-6 d-flex justify-content-end" >آدرس: محمد جان خان وات کابل - افغانستان</span>
+            </div>
+        </div>
+
+        <div class="article o_report_layout_standard">
+            <t t-call="web.address_layout"/>
+            <t t-raw="0"/>
+        </div>
+    </template>
+
+</odoo>
